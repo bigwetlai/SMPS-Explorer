@@ -65,7 +65,7 @@
   .mono{ font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
   a{ color:var(--accent); }
 
-  #shell{ max-width:1180px; margin:0 auto; padding:20px 20px 56px; }
+  #shell{ max-width:1800px; margin:0 auto; padding:20px 20px 56px; }
 
   header.top{
     display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
@@ -120,12 +120,11 @@
   }
   .filetab .x:hover{ background:var(--border); color:var(--fg); }
 
-  #app{ display:none; grid-template-columns:260px 1fr 260px; gap:20px; align-items:start; }
+  #app{ display:none; grid-template-columns:250px minmax(0,1fr); gap:16px; align-items:start; }
   #app.visible{ display:grid; }
-  @media (max-width:1200px){ #app.visible{ grid-template-columns:1fr; } }
+  @media (max-width:1280px){ #app.visible{ grid-template-columns:minmax(0,1fr); } .chart-row{ grid-template-columns:minmax(0,1fr) !important; } .chart-row > .panel-split{ position:static !important; margin-top:14px !important; } }
   #app.tidy-mode{ grid-template-columns:1fr; }
   #app.tidy-mode #sidebar{ display:none; }
-  #app.tidy-mode #styleSidebar{ display:none; }
 
   .panel{
     background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
@@ -178,6 +177,41 @@
   .compare-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .compare-row .x{ cursor:pointer; color:var(--muted); flex-shrink:0; }
   .compare-row .x:hover{ color:var(--danger); }
+
+
+
+  /* each chart sits in a row with its own settings panel anchored to its right */
+  .chart-row{ display:grid; grid-template-columns:minmax(0,1fr) 264px; gap:16px; align-items:start; }
+  .chart-row > *{ min-width:0; }
+  .chart-row > .panel-split{ position:sticky; top:12px; }
+  #distRow > .panel-split{ margin-top:24px; }
+  .panel-split .panel-body{ max-height:min(62vh, calc(100vh - 200px)); }
+  .stats-cols{ display:flex; flex-wrap:wrap; gap:6px 16px; margin:4px 0 12px; font-size:12.5px; }
+  .stats-cols label{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .stats-cols input{ accent-color:var(--accent); }
+  #groupStatsTable{ width:auto; min-width:min(100%, 460px); }
+  #groupStatsTable th, #groupStatsTable td{ padding:7px 20px 7px 12px; white-space:nowrap; }
+  table.data td.num, table.data th.num{ text-align:right; }
+  table.data td.lbl, table.data th.lbl{ text-align:left; }
+  /* settings panels: header stays put, body scrolls, sections fold */
+  .panel-split{ padding:0; overflow:hidden; }
+  .panel-split .panel-head{ padding:14px 14px 8px; border-bottom:1px solid var(--border); }
+  .panel-split .panel-head h2{ margin-bottom:8px; }
+  .panel-split .panel-body{ overflow-y:auto; padding:2px 14px 10px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .panel-split .panel-body::-webkit-scrollbar{ width:8px; }
+  .panel-split .panel-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+  details.fold{ border-bottom:1px solid var(--border); }
+  details.fold:last-child{ border-bottom:none; }
+  details.fold > summary{ cursor:pointer; padding:9px 0; font-size:12.5px; font-weight:600; list-style:none; display:flex; align-items:center; gap:7px; user-select:none; }
+  details.fold > summary::-webkit-details-marker{ display:none; }
+  details.fold > summary::before{ content:'▸'; color:var(--accent); font-size:11px; display:inline-block; width:10px; transition:transform .12s ease; }
+  details.fold[open] > summary::before{ transform:rotate(90deg); }
+  details.fold > summary:hover{ color:var(--accent); }
+  .fold-body{ padding:2px 1px 12px; }
+  .field input[type="text"]{ width:100%; font-family:inherit; font-size:12.5px; color:var(--fg); background:var(--panel-2); border:1px solid var(--border); border-radius:4px; padding:6px 8px; }
+  .color-wide{ width:100%; height:26px; padding:2px; border:1px solid var(--border); border-radius:4px; background:none; cursor:pointer; }
+  .hint{ margin:2px 0 4px; font-size:11px; color:var(--muted); line-height:1.4; }
+  .export-info{ margin-top:6px; font-size:11px; color:var(--muted); line-height:1.4; }
   .row-actions{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
   .row-actions .btn{ white-space:nowrap; }
 
@@ -197,7 +231,7 @@
   .section-title h2{ margin:0; font-size:15px; font-weight:600; }
   .section-title .caption{ font-size:12px; color:var(--muted); }
 
-  .plot{ width:100%; height:380px; }
+  .plot{ width:100%; height:600px; margin:0 auto; max-width:100%; }
 
   table.data{ width:100%; border-collapse:collapse; font-size:12px; }
   table.data thead th{
@@ -346,13 +380,73 @@
     </aside>
 
     <main>
-      <section id="matrixSection" style="display:none;">
-        <div class="section-title">
-          <h2 id="matrixTitle" style="display:none;"></h2>
-          <span class="caption" id="matrixCaption"></span>
+      <div class="chart-row" id="distRow">
+        <section id="matrixSection" style="display:none;">
+          <div class="section-title">
+            <h2 id="matrixTitle" style="display:none;"></h2>
+            <span class="caption" id="matrixCaption"></span>
+          </div>
+          <div class="panel"><div class="plot" id="matrixChart"></div></div>
+        </section>
+
+        <div class="panel panel-split" id="chartStylePanel" style="display:none;">
+          <div class="panel-head">
+            <h2>Distribution chart</h2>
+            <div class="field-row" style="align-items:flex-end;">
+              <div class="field"><label>Style preset</label><select id="dsPreset"></select></div>
+              <div class="field" style="flex:0 0 auto;"><button class="btn small" id="resetStyleBtn" title="Back to the Journal-style defaults (export settings are kept)">Reset</button></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <details class="fold"><summary>Title &amp; labels</summary><div class="fold-body">
+              <div class="field"><label>Chart title</label><input type="text" id="chartTitle" placeholder="(none)"></div>
+              <div class="field-row">
+                <div class="field"><label>X axis label</label><input type="text" id="chartXLabel" placeholder="auto"></div>
+                <div class="field"><label>Y axis label</label><input type="text" id="chartYLabel" placeholder="auto"></div>
+              </div>
+            </div></details>
+            <details class="fold"><summary>Size</summary><div class="fold-body">
+              <div class="field-row">
+                <div class="field"><label>Width (px)</label><input type="number" id="plotWidth" min="300" max="2400" step="20" placeholder="fit"></div>
+                <div class="field"><label>Height (px)</label><input type="number" id="plotHeight" min="200" max="1600" step="20"></div>
+              </div>
+              <p class="hint">The figure shrinks to fit when the page is narrower than this width, but always exports at the full size.</p>
+            </div></details>
+            <details class="fold"><summary>Axes &amp; ticks</summary><div class="fold-body" id="dsAxes"></div></details>
+            <details class="fold"><summary>Fonts</summary><div class="fold-body" id="dsFonts"></div></details>
+            <details class="fold"><summary>Number format</summary><div class="fold-body" id="dsNum"></div></details>
+            <details class="fold"><summary>Lines &amp; markers</summary><div class="fold-body">
+              <div class="field"><label>Color palette (replaces manual colors)</label><select id="dsPalette"></select></div>
+              <div class="field-row">
+                <div class="field"><label>Line width</label><input type="number" id="lineWidth" min="0.25" max="10" step="0.25"></div>
+                <div class="field"><label>Marker size</label><input type="number" id="markerSize" min="0" max="20" step="1"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Line style</label>
+                  <select id="lineDash"><option value="solid">Solid</option><option value="dash">Dashed</option><option value="dot">Dotted</option><option value="dashdot">Dash-dot</option></select>
+                </div>
+                <div class="field"><label>Marker shape</label>
+                  <select id="markerShape"><option value="circle">Circle</option><option value="square">Square</option><option value="diamond">Diamond</option><option value="triangle-up">Triangle</option><option value="cross">Cross</option><option value="x">X</option><option value="star">Star</option><option value="pentagon">Pentagon</option></select>
+                </div>
+              </div>
+              <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="showMarkers"> Show markers</label>
+              <label class="toggle-row"><input type="checkbox" id="dsMarkerEdge"> Marker edge (separates overlapping points)</label>
+            </div></details>
+            <details class="fold"><summary>Error bands (groups)</summary><div class="fold-body">
+              <div class="field-row">
+                <div class="field"><label>Opacity</label><input type="number" id="bandOpacity" min="0.02" max="1" step="0.02"></div>
+                <div class="field"><label>Fill</label><select id="bandFill"></select></div>
+              </div>
+              <div class="field"><label>Edge line</label>
+                <select id="bandEdge"><option value="none">None</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select>
+              </div>
+              <p class="hint">Defaults for every group. Each group can override them, and choose its own error type and fill color, from its ⚙ in Average groups.</p>
+            </div></details>
+            <details class="fold"><summary>Legend</summary><div class="fold-body" id="dsLegend"></div></details>
+            <details class="fold"><summary>Export</summary><div class="fold-body" id="exportSlotMatrix"></div></details>
+          </div>
         </div>
-        <div class="panel"><div class="plot" id="matrixChart"></div></div>
-      </section>
+      </div>
 
       <section id="perSampleSection" style="display:none; margin-top:20px;">
         <div class="section-title">
@@ -362,9 +456,166 @@
         <div class="panel">
           <div class="table-scroll"><table class="data" id="perSampleTable"></table></div>
         </div>
+      </section>
 
-        <div class="panel" id="statChartPanel" style="display:none; margin-top:14px;">
-          <div class="plot" id="statChart" style="height:300px;"></div>
+      <div class="chart-row" id="statRow" style="margin-top:20px;">
+        <div class="panel" id="statChartPanel" style="display:none;">
+          <div class="plot" id="statChart"></div>
+        </div>
+
+        <div class="panel panel-split" id="barSettingsPanel" style="display:none;">
+          <div class="panel-head">
+            <h2>Bar chart</h2>
+            <div class="field-row" style="align-items:flex-end;">
+              <div class="field"><label>Style preset</label><select id="brPreset"></select></div>
+              <div class="field" style="flex:0 0 auto;"><button class="btn small" id="resetBarBtn" title="Back to the Journal-style defaults (export settings are kept)">Reset</button></div>
+            </div>
+            <div class="field-row" style="align-items:flex-end;">
+              <div class="field" style="flex:2;"><label>Field to plot</label><select id="statField"></select></div>
+              <div class="field" style="flex:1;"><label>Type</label><select id="statType"><option value="bar">Bar</option><option value="line">Line</option></select></div>
+            </div>
+            <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="statLabels"> Show value labels</label>
+            <div class="field" id="statErrorField" style="display:none; margin-top:8px;">
+              <label>Error bars (group mode only)</label>
+              <select id="statError">
+                <option value="none">None</option>
+                <option value="se">± Standard error</option>
+                <option value="sd">± Standard deviation</option>
+                <option value="sd2">± 2 × SD</option>
+                <option value="ci95">95% confidence interval</option>
+                <option value="range">Min – max range</option>
+              </select>
+            </div>
+          </div>
+          <div class="panel-body">
+            <details class="fold"><summary>Title &amp; labels</summary><div class="fold-body">
+              <div class="field"><label>Chart title</label><input type="text" id="barTitle" placeholder="(none)"></div>
+              <div class="field-row">
+                <div class="field"><label>X axis label</label><input type="text" id="barXLabel" placeholder="none"></div>
+                <div class="field"><label>Y axis label</label><input type="text" id="barYLabel" placeholder="field name"></div>
+              </div>
+            </div></details>
+            <details class="fold"><summary>Size</summary><div class="fold-body">
+              <div class="field-row">
+                <div class="field"><label>Width (px)</label><input type="number" id="barWidth" min="200" max="2400" step="20" placeholder="fit"></div>
+                <div class="field"><label>Height (px)</label><input type="number" id="barHeight" min="150" max="1600" step="20"></div>
+              </div>
+              <p class="hint">Shrinks to fit a narrower page; always exports at the full size.</p>
+            </div></details>
+            <details class="fold"><summary>Axes &amp; ticks</summary><div class="fold-body" id="brAxes"></div></details>
+            <details class="fold"><summary>Fonts</summary><div class="fold-body" id="brFonts"></div></details>
+            <details class="fold"><summary>Number format</summary><div class="fold-body" id="brNum"></div></details>
+            <details class="fold"><summary>Bars</summary><div class="fold-body">
+              <div class="field-row">
+                <div class="field" style="flex:1.5;"><label>Bar colors</label>
+                  <select id="barColorMode"><option value="single">Single color</option><option value="match">Match line colors</option><option value="custom">Custom per bar</option></select>
+                </div>
+                <div class="field" id="barColorField"><label>Color</label><input type="color" id="barColor" class="color-wide"></div>
+              </div>
+              <div id="barColorListWrap" style="display:none; margin-bottom:8px;">
+                <div class="checklist" id="barColorList" style="max-height:190px;"></div>
+                <button class="btn small" id="barColorReset" style="margin-top:6px;">Reset to line colors</button>
+              </div>
+              <div class="field"><label>Fill</label><select id="barFillStyle"></select></div>
+              <div class="field-row" id="barPatternRow">
+                <div class="field"><label>Pattern scale</label><input type="number" id="barPatSize" min="2" max="30" step="1"></div>
+                <div class="field"><label>Density</label><input type="number" id="barPatSolidity" min="0.1" max="0.9" step="0.05"></div>
+              </div>
+              <div class="field" id="barPatBgField"><label>Pattern background</label>
+                <select id="barPatBg"><option value="transparent">Transparent</option><option value="white">Page / white</option><option value="tint">Light tint of the bar color</option></select>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Opacity</label><input type="number" id="brBarOpacity" min="0.2" max="1" step="0.05"></div>
+                <div class="field"><label>Width (% of slot)</label><input type="number" id="barWidthPct" min="5" max="100" step="5" placeholder="auto"></div>
+              </div>
+              <p class="hint">Width is relative to the space each bar gets, so proportions hold when the figure or the number of bars changes. Auto is 85%.</p>
+              <label class="toggle-row" style="margin-top:6px;"><input type="checkbox" id="brBarOutline"> Outline</label>
+              <div class="field-row">
+                <div class="field"><label>Outline width</label><input type="number" id="brOutlineWidth" min="0.25" max="6" step="0.25"></div>
+                <div class="field"><label>Outline color</label>
+                  <select id="brOutlineColor"><option value="darker">Darker than fill</option><option value="ink">Ink (text color)</option><option value="same">Same as fill</option></select>
+                </div>
+              </div>
+            </div></details>
+            <details class="fold"><summary>Error bars</summary><div class="fold-body">
+              <div class="field"><label>Color</label>
+                <select id="brErrColor"><option value="ink">Ink (text color)</option><option value="match">Darker than bar</option><option value="gray">Gray</option></select>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Thickness</label><input type="number" id="brErrThick" min="0.5" max="5" step="0.25"></div>
+                <div class="field"><label>Cap width</label><input type="number" id="brErrCap" min="0" max="14" step="1"></div>
+              </div>
+            </div></details>
+            <details class="fold"><summary>Value labels</summary><div class="fold-body">
+              <div class="field-row">
+                <div class="field"><label>Position</label>
+                  <select id="statLabelPos"><option value="auto">Auto</option><option value="inside">Inside</option><option value="outside">Outside</option></select>
+                </div>
+                <div class="field"><label>Padding (px)</label><input type="number" id="statLabelPad" min="0" max="60" step="1"></div>
+              </div>
+            </div></details>
+            <details class="fold"><summary>Overlay</summary><div class="fold-body">
+              <div class="field-row" style="align-items:flex-end;">
+                <div class="field" style="flex:2;"><label>Field</label><select id="statOverlayField"><option value="">None</option></select></div>
+                <div class="field" style="flex:1;" id="statOverlayTypeField"><label>As</label>
+                  <select id="statOverlayType"><option value="line">Line</option><option value="bar">Bar</option></select>
+                </div>
+              </div>
+              <div id="statOverlayExtra" style="display:none;">
+                <div class="field-row">
+                  <div class="field"><label>Color</label><input type="color" id="statOverlayColor" class="color-wide"></div>
+                  <div class="field"><label>Width</label><input type="number" id="statOverlayWidth" min="0.5" max="8" step="0.5"></div>
+                </div>
+                <div class="field-row" id="statOverlayLineOnly">
+                  <div class="field"><label>Dash</label>
+                    <select id="statOverlayDash"><option value="solid">Solid</option><option value="dash">Dashed</option><option value="dot">Dotted</option><option value="dashdot">Dash-dot</option></select>
+                  </div>
+                  <div class="field" style="flex:0 0 auto; display:flex; align-items:flex-end;">
+                    <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="statOverlayMarkers"> Markers</label>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field"><label>Axis min</label><input type="number" id="statOverlayMin" placeholder="0" step="any"></div>
+                  <div class="field"><label>Axis max</label><input type="number" id="statOverlayMax" placeholder="auto" step="any"></div>
+                </div>
+              </div>
+              <label class="toggle-row"><input type="checkbox" id="brMarkerEdge"> Marker edge (line type / overlay)</label>
+            </div></details>
+            <details class="fold"><summary>Legend</summary><div class="fold-body" id="brLegend"></div></details>
+            <details class="fold"><summary>Export</summary><div class="fold-body" id="exportSlotBar"></div></details>
+          </div>
+        </div>
+      </div>
+
+      <section id="groupStatsSection" style="display:none; margin-top:20px;">
+        <div class="section-title">
+          <h2>Group summary</h2>
+          <span class="caption" id="groupStatsCaption"></span>
+        </div>
+        <div class="panel">
+          <div class="field-row" style="align-items:flex-end; flex-wrap:wrap;">
+            <div class="field" style="flex:2 1 220px;"><label>Field</label><select id="gsField"></select></div>
+            <div class="field" style="flex:1 1 170px;"><label>Numbers</label><select id="gsNumMode"></select></div>
+            <div class="field" style="flex:0 0 70px;"><label>Decimals</label><input type="number" id="gsDecimals" min="0" max="8" step="1"></div>
+          </div>
+          <div class="stats-cols">
+            <label><input type="checkbox" id="gsCol_n"> n</label>
+            <label><input type="checkbox" id="gsCol_mean"> Mean</label>
+            <label><input type="checkbox" id="gsCol_sd"> SD</label>
+            <label><input type="checkbox" id="gsCol_cv"> CV (RSD)</label>
+            <label><input type="checkbox" id="gsCol_se"> SE</label>
+            <label><input type="checkbox" id="gsCol_ci95"> 95% CI ±</label>
+            <label><input type="checkbox" id="gsCol_min"> Min</label>
+            <label><input type="checkbox" id="gsCol_max"> Max</label>
+            <label><input type="checkbox" id="gsCol_median"> Median</label>
+          </div>
+          <div class="table-scroll" style="max-height:none;"><table class="data" id="groupStatsTable"></table></div>
+          <div class="row-actions">
+            <button class="btn small" id="gsCopy">Copy table</button>
+            <button class="btn small" id="gsCsv">Download CSV</button>
+            <span class="hint" id="gsNote" style="align-self:center; margin:0;"></span>
+          </div>
+          <p class="hint">CV (RSD) = SD ÷ mean × 100. SD and SE use n−1. Copy and CSV contain full-precision numbers rather than the display format.</p>
         </div>
       </section>
 
@@ -417,234 +668,6 @@
         Couldn't find a clear data block or per-sample columns in this file — check the "Other rows" panel above for whatever was parsed.
       </div>
     </main>
-
-    <aside id="styleSidebar">
-      <div class="panel" id="chartStylePanel" style="display:none;">
-        <h2>Distribution chart</h2>
-        <div class="field">
-          <label>Chart title</label>
-          <input type="text" id="chartTitle" placeholder="(none)">
-        </div>
-        <div class="field-row">
-          <div class="field"><label>X axis label</label><input type="text" id="chartXLabel" placeholder="auto"></div>
-          <div class="field"><label>Y axis label</label><input type="text" id="chartYLabel" placeholder="auto"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Line width</label><input type="number" id="lineWidth" min="0.5" max="8" step="0.5"></div>
-          <div class="field"><label>Marker size</label><input type="number" id="markerSize" min="1" max="14" step="1"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Line style</label>
-            <select id="lineDash">
-              <option value="solid">Solid</option>
-              <option value="dash">Dashed</option>
-              <option value="dot">Dotted</option>
-              <option value="dashdot">Dash-dot</option>
-            </select>
-          </div>
-          <div class="field"><label>Marker shape</label>
-            <select id="markerShape">
-              <option value="circle">Circle</option>
-              <option value="square">Square</option>
-              <option value="diamond">Diamond</option>
-              <option value="triangle-up">Triangle</option>
-              <option value="cross">Cross</option>
-              <option value="x">X</option>
-              <option value="star">Star</option>
-              <option value="pentagon">Pentagon</option>
-            </select>
-          </div>
-        </div>
-        <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="showMarkers" checked> Show markers</label>
-
-        <h3 style="margin-top:14px;">Layout</h3>
-        <div class="field-row">
-          <div class="field"><label>Width (px)</label><input type="number" id="plotWidth" min="300" max="2400" step="20" placeholder="auto"></div>
-          <div class="field"><label>Height (px)</label><input type="number" id="plotHeight" min="200" max="1200" step="20"></div>
-        </div>
-        <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="showGrid" checked> Show gridlines</label>
-
-        <h3 style="margin-top:14px;">Font sizes</h3>
-        <div class="field-row">
-          <div class="field"><label>Tick labels</label><input type="number" id="fontTick" min="6" max="24" step="1"></div>
-          <div class="field"><label>Axis titles</label><input type="number" id="fontAxisTitle" min="6" max="28" step="1"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Legend</label><input type="number" id="fontLegend" min="6" max="24" step="1"></div>
-          <div class="field"><label>Chart title</label><input type="number" id="fontChartTitle" min="6" max="32" step="1"></div>
-        </div>
-
-        <h3 style="margin-top:14px;">Legend</h3>
-        <div class="field">
-          <label>Position</label>
-          <select id="legendPos">
-            <option value="bottom">Bottom</option>
-            <option value="right">Right</option>
-            <option value="top">Top</option>
-            <option value="inside">Inside</option>
-            <option value="hidden">Hidden</option>
-          </select>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Opacity</label><input type="number" id="legendAlpha" min="0" max="1" step="0.05"></div>
-          <div class="field" style="flex:0 0 auto; display:flex; align-items:flex-end;">
-            <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="legendBorder" checked> Border</label>
-          </div>
-        </div>
-
-        <h3 style="margin-top:14px;">Export</h3>
-        <div class="field-row">
-          <div class="field"><label>Format</label>
-            <select id="exportFormat"><option value="png">PNG</option><option value="svg">SVG (vector)</option></select>
-          </div>
-          <div class="field"><label>Scale</label><input type="number" id="exportScale" min="1" max="8" step="1"></div>
-        </div>
-        <div class="field">
-          <label>Background</label>
-          <select id="exportBg">
-            <option value="transparent">Transparent</option>
-            <option value="white">White</option>
-            <option value="panel">Match page</option>
-          </select>
-        </div>
-
-        <div class="row-actions" style="margin-top:12px;">
-          <button class="btn small" id="resetStyleBtn">Reset style</button>
-        </div>
-      </div>
-
-      <div class="panel" id="barSettingsPanel" style="display:none;">
-        <h2>Bar chart</h2>
-        <div class="field-row" style="align-items:flex-end;">
-          <div class="field" style="flex:2;">
-            <label>Field to plot</label>
-            <select id="statField"></select>
-          </div>
-          <div class="field" style="flex:1;">
-            <label>Type</label>
-            <select id="statType">
-              <option value="bar">Bar</option>
-              <option value="line">Line</option>
-            </select>
-          </div>
-        </div>
-        <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="statLabels"> Show value labels</label>
-        <div class="field" id="statErrorField" style="display:none; margin-top:8px;">
-          <label>Error bars (group mode only)</label>
-          <select id="statError">
-            <option value="none">None</option>
-            <option value="se">± Standard error</option>
-            <option value="sd">± Standard deviation</option>
-          </select>
-        </div>
-        <div class="field-row" style="margin-top:8px;">
-          <div class="field"><label>Label position</label>
-            <select id="statLabelPos">
-              <option value="auto">Auto</option>
-              <option value="inside">Inside</option>
-              <option value="outside">Outside</option>
-            </select>
-          </div>
-          <div class="field"><label>Padding (px)</label><input type="number" id="statLabelPad" min="0" max="60" step="1"></div>
-        </div>
-
-        <h3 style="margin-top:12px;">Overlay</h3>
-        <div class="field-row" style="align-items:flex-end;">
-          <div class="field" style="flex:2;">
-            <label>Field</label>
-            <select id="statOverlayField"><option value="">None</option></select>
-          </div>
-          <div class="field" style="flex:1;" id="statOverlayTypeField">
-            <label>As</label>
-            <select id="statOverlayType"><option value="line">Line</option><option value="bar">Bar</option></select>
-          </div>
-        </div>
-        <div id="statOverlayExtra" style="display:none;">
-          <div class="field-row">
-            <div class="field"><label>Color</label>
-              <input type="color" id="statOverlayColor" style="width:100%; height:26px; padding:2px; border:1px solid var(--border); border-radius:4px; background:none; cursor:pointer;">
-            </div>
-            <div class="field"><label>Width</label><input type="number" id="statOverlayWidth" min="0.5" max="8" step="0.5"></div>
-          </div>
-          <div class="field-row" id="statOverlayLineOnly">
-            <div class="field"><label>Dash</label>
-              <select id="statOverlayDash">
-                <option value="solid">Solid</option><option value="dash">Dashed</option>
-                <option value="dot">Dotted</option><option value="dashdot">Dash-dot</option>
-              </select>
-            </div>
-            <div class="field" style="flex:0 0 auto; display:flex; align-items:flex-end;">
-              <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="statOverlayMarkers" checked> Markers</label>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Axis min</label><input type="number" id="statOverlayMin" placeholder="0" step="any"></div>
-            <div class="field"><label>Axis max</label><input type="number" id="statOverlayMax" placeholder="auto" step="any"></div>
-          </div>
-        </div>
-
-        <h3 style="margin-top:12px;">Style</h3>
-        <div class="field-row">
-          <div class="field"><label>Bar color</label>
-            <input type="color" id="barColor" style="width:100%; height:26px; padding:2px; border:1px solid var(--border); border-radius:4px; background:none; cursor:pointer;">
-          </div>
-          <div class="field" id="barUseGroupColorField" style="display:none; flex:0 0 auto; display:flex; align-items:flex-end;">
-            <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="barUseGroupColor"> Use group colors</label>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Width (px)</label><input type="number" id="barWidth" min="200" max="2400" step="20" placeholder="auto"></div>
-          <div class="field"><label>Height (px)</label><input type="number" id="barHeight" min="150" max="1000" step="20"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Bar gap</label><input type="number" id="barGap" min="0" max="0.9" step="0.05"></div>
-          <div class="field"><label>X tick angle</label><input type="number" id="barTickAngle" min="-90" max="0" step="5"></div>
-        </div>
-        <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="barShowGrid" checked> Show gridlines</label>
-
-        <h3 style="margin-top:12px;">Font sizes</h3>
-        <div class="field-row">
-          <div class="field"><label>Tick labels</label><input type="number" id="barFontTick" min="6" max="24" step="1"></div>
-          <div class="field"><label>Axis titles</label><input type="number" id="barFontAxisTitle" min="6" max="28" step="1"></div>
-        </div>
-        <div class="field"><label>Legend</label><input type="number" id="barFontLegend" min="6" max="24" step="1"></div>
-
-        <h3 style="margin-top:12px;">Legend</h3>
-        <div class="field">
-          <label>Position</label>
-          <select id="barLegendPos">
-            <option value="auto">Auto (on with overlay)</option>
-            <option value="bottom">Bottom</option>
-            <option value="right">Right</option>
-            <option value="top">Top</option>
-            <option value="inside">Inside</option>
-            <option value="hidden">Hidden</option>
-          </select>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Opacity</label><input type="number" id="barLegendAlpha" min="0" max="1" step="0.05"></div>
-          <div class="field" style="flex:0 0 auto; display:flex; align-items:flex-end;">
-            <label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="barLegendBorder" checked> Border</label>
-          </div>
-        </div>
-
-        <h3 style="margin-top:12px;">Export</h3>
-        <div class="field-row">
-          <div class="field"><label>Format</label>
-            <select id="barExportFormat"><option value="png">PNG</option><option value="svg">SVG (vector)</option></select>
-          </div>
-          <div class="field"><label>Scale</label><input type="number" id="barExportScale" min="1" max="8" step="1"></div>
-        </div>
-        <div class="field">
-          <label>Background</label>
-          <select id="barExportBg">
-            <option value="transparent">Transparent</option>
-            <option value="white">White</option>
-            <option value="panel">Match page</option>
-          </select>
-        </div>
-      </div>
-    </aside>
   </div>
 
   <footer class="note">Everything runs locally in the page — files are parsed in your browser and never leave your device.</footer>
@@ -898,34 +921,99 @@
   let groupColorRev = false;
   let statErrorType = 'none';
 
-  const DEFAULT_PALETTE = ['#2D6E63','#B3452F','#4C6EF5','#C08A2E','#8659C9','#2E9E8F','#D65D8A','#5C7A3B','#3E7CB1','#A64B4B'];
-  const MARKER_SHAPES = [
-    {v:'circle', n:'Circle'}, {v:'square', n:'Square'}, {v:'diamond', n:'Diamond'},
-    {v:'triangle-up', n:'Triangle'}, {v:'cross', n:'Cross'}, {v:'x', n:'X'},
-    {v:'star', n:'Star'}, {v:'pentagon', n:'Pentagon'},
+  // ---------- look: palettes, fonts, presets ----------
+  const PALETTES = {
+    okabe:     {name:'Okabe–Ito (colorblind-safe)', colors:['#0072B2','#D55E00','#009E73','#E69F00','#CC79A7','#56B4E9','#F0E442','#000000']},
+    tolbright: {name:'Tol bright', colors:['#4477AA','#EE6677','#228833','#CCBB44','#66CCEE','#AA3377','#BBBBBB']},
+    tolmuted:  {name:'Tol muted', colors:['#332288','#CC6677','#117733','#DDCC77','#88CCEE','#882255','#44AA99','#999933','#AA4499']},
+    dark2:     {name:'ColorBrewer Dark2', colors:['#1B9E77','#D95F02','#7570B3','#E7298A','#66A61E','#E6AB02','#A6761D','#666666']},
+    tableau:   {name:'Tableau 10', colors:['#4E79A7','#F28E2B','#E15759','#76B7B2','#59A14F','#EDC948','#B07AA1','#FF9DA7','#9C755F','#BAB0AC']},
+    set1:      {name:'Classic (Set1, black first)', colors:['#000000','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#A65628','#F781BF']},
+    previous:  {name:'Previous default', colors:['#2D6E63','#B3452F','#4C6EF5','#C08A2E','#8659C9','#2E9E8F','#D65D8A','#5C7A3B','#3E7CB1','#A64B4B']},
+  };
+  let DEFAULT_PALETTE = PALETTES.okabe.colors;
+
+  // Web fonts (Space Grotesk, IBM Plex Mono) can't be used inside exported images —
+  // the browser renders exports from an SVG that has no access to the page's @font-face
+  // fonts — so only system-safe stacks are offered for chart text by default.
+  const FONT_CHOICES = [
+    {v:'Arial, Helvetica, sans-serif', n:'Arial / Helvetica (journal standard)'},
+    {v:'"Helvetica Neue", Helvetica, Arial, sans-serif', n:'Helvetica Neue'},
+    {v:'"Times New Roman", Times, serif', n:'Times (serif)'},
+    {v:'Georgia, "Times New Roman", serif', n:'Georgia (serif)'},
+    {v:'"Courier New", Courier, monospace', n:'Courier (monospace)'},
+    {v:'"Space Grotesk", Arial, sans-serif', n:'Space Grotesk (page font; exports as Arial)'},
+    {v:'"IBM Plex Mono", "Courier New", monospace', n:'IBM Plex Mono (previous; exports as Courier)'},
   ];
+  function exportSafeFont(ff){
+    if (/Space Grotesk/.test(ff)) return 'Arial, Helvetica, sans-serif';
+    if (/IBM Plex Mono/.test(ff)) return '"Courier New", Courier, monospace';
+    return ff;
+  }
+
+  const BAND_FILLS = {
+    solid:    {n:'Solid',        shape:null},
+    slash:    {n:'Hatch  /',     shape:'/'},
+    backslash:{n:'Hatch  \\',    shape:'\\'},
+    cross:    {n:'Cross-hatch',  shape:'x'},
+    dots:     {n:'Dots',         shape:'.'},
+    grid:     {n:'Grid',         shape:'+'},
+  };
+
+  // Each preset is a bundle of "look" settings (axes, ticks, grid, error bars...) plus a
+  // few per-chart style flags. Journal style is the default: sans-serif text, ticks on
+  // the inside of a full frame, no gridlines, colorblind-safe colors, and error bars in
+  // ink rather than a washed-out gray.
+  const PRESETS = {
+    journal: {label:'Journal style (default)',
+      look:{palette:'okabe', frame:'box', tickDir:'inside', tickLen:5, minorTicks:true, axisWidth:1.2, gridStyle:'light', plotTint:false, markerEdge:false, barOutline:true, barOutlineWidth:0.9, barOutlineColor:'ink', barOpacity:1, errColor:'ink', errThickness:1.2, errCap:5},
+      style:{showGrid:false, legendBorder:false, legendAlpha:0}},
+    clean: {label:'Clean (light grid)',
+      look:{palette:'okabe', frame:'box', tickDir:'inside', tickLen:5, minorTicks:true, axisWidth:1, gridStyle:'light', plotTint:false, markerEdge:true, barOutline:true, barOutlineWidth:0.9, barOutlineColor:'darker', barOpacity:0.9, errColor:'ink', errThickness:1.4, errCap:4},
+      style:{showGrid:true, legendBorder:false, legendAlpha:0.85}},
+    classic: {label:'Classic (Origin-style)',
+      look:{palette:'set1', frame:'box', tickDir:'inside', tickLen:6, minorTicks:true, axisWidth:1.5, gridStyle:'light', plotTint:false, markerEdge:false, barOutline:true, barOutlineWidth:1.2, barOutlineColor:'ink', barOpacity:1, errColor:'ink', errThickness:1.5, errCap:6},
+      style:{showGrid:false, legendBorder:true, legendAlpha:1}},
+    minimal: {label:'Minimal (open axes)',
+      look:{palette:'tolmuted', frame:'axes', tickDir:'outside', tickLen:4, minorTicks:false, axisWidth:1, gridStyle:'light', plotTint:false, markerEdge:true, barOutline:false, barOutlineWidth:0.9, barOutlineColor:'darker', barOpacity:0.95, errColor:'match', errThickness:1.2, errCap:3},
+      style:{showGrid:false, legendBorder:false, legendAlpha:0}},
+    soft: {label:'Soft (ggplot / seaborn-like)',
+      look:{palette:'tableau', frame:'none', tickDir:'none', tickLen:4, minorTicks:false, axisWidth:1, gridStyle:'cutout', plotTint:true, markerEdge:true, barOutline:false, barOutlineWidth:0.9, barOutlineColor:'darker', barOpacity:0.92, errColor:'match', errThickness:1.4, errCap:3},
+      style:{showGrid:true, legendBorder:false, legendAlpha:0}},
+  };
+
+  function defaultLook(){
+    return Object.assign({preset:'journal', fontFamily:FONT_CHOICES[0].v, barOutlineWidth:0.9, barOutlineColor:'ink'}, PRESETS.journal.look);
+  }
+  function defaultExport(){
+    return {format:'png', sizeMode:'screen', unit:'cm', w:16, h:10, dpi:600, theme:'print', bg:'white'};
+  }
 
   function defaultChartStyle(){
     return {
       lineWidth:1.6, markerSize:4, lineDash:'solid', markerShape:'circle', showMarkers:true,
       title:'', xLabel:'', yLabel:'',
-      showGrid:true, plotHeight:380, plotWidth:'',
+      showGrid:false, plotHeight:600, plotWidth:800,
       fontTick:11, fontAxisTitle:13, fontLegend:10, fontChartTitle:14,
-      legendPos:'bottom', legendAlpha:0.82, legendBorder:true,
-      exportFormat:'png', exportScale:3, exportBg:'transparent',
+      legendPos:'bottom', legendAlpha:0, legendBorder:false,
+      bandOpacity:0.12, bandFill:'solid', bandEdge:'none',
+      numX:{mode:'auto', decimals:2}, numY:{mode:'auto', decimals:2},
+      export:defaultExport(),
     };
   }
   function defaultBarStyle(){
     return {
-      color:'#2D6E63', height:300, width:'',
-      showGrid:true, tickAngle:-30, barGap:0.15,
-      fontTick:11, fontAxisTitle:12, fontLegend:10,
+      title:'', xLabel:'', yLabel:'',
+      color:PALETTES.okabe.colors[0], barColorMode:'single', height:600, width:800,
+      fillStyle:'solid', patSize:6, patSolidity:0.4, patBg:'transparent', barWidthPct:'',
+      showGrid:false, tickAngle:-30,
+      fontTick:11, fontAxisTitle:12, fontLegend:10, fontChartTitle:14,
       labelPos:'auto', labelPad:8,
-      overlayField:'', overlayType:'line', overlayColor:'#C08A2E', overlayWidth:2,
+      numY:{mode:'auto', decimals:2}, numLabel:{mode:'auto', decimals:2},
+      overlayField:'', overlayType:'line', overlayColor:PALETTES.okabe.colors[1], overlayWidth:2,
       overlayDash:'solid', overlayMarkers:true, overlayMin:'', overlayMax:'',
-      useGroupColor:false,
-      legendPos:'auto', legendAlpha:0.82, legendBorder:true,
-      exportFormat:'png', exportScale:3, exportBg:'transparent',
+      legendPos:'auto', legendAlpha:0, legendBorder:false,
+      export:defaultExport(),
     };
   }
 
@@ -947,8 +1035,11 @@
     return stdDev(v)/Math.sqrt(v.length);
   }
 
-  function hexToRgb(hex){
-    const h = hex.replace('#','');
+  function hexToRgb(c){
+    c = String(c).trim();
+    if (c.startsWith('rgb')){ const m = c.match(/[\d.]+/g) || [0,0,0]; return [+m[0], +m[1], +m[2]]; }
+    let h = c.replace('#','');
+    if (h.length===3) h = h.split('').map(x=>x+x).join('');
     return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
   }
   function rgbToHex(r,g,b){
@@ -988,16 +1079,412 @@
     return 'rgba('+r+','+g+','+b+','+alpha+')';
   }
 
-  // Plotly's built-in camera-icon download otherwise exports at the on-screen CSS
-  // size (often under 1000px wide), which looks blurry once actually used anywhere.
-  // Scale/format/filename are now user-configurable per chart (Export section).
-  function plotConfig(filename, style){
-    return {
-      displaylogo:false,
-      responsive: !style.plotWidth && !style.width,
-      toImageButtonOptions:{ format: style.exportFormat||'png', filename, scale: style.exportScale||3 },
-    };
+
+  function darken(color, amt){ const [r,g,b] = hexToRgb(color); const k = 1-amt; return rgbToHex(r*k, g*k, b*k); }
+  function contrastText(color){ const [r,g,b] = hexToRgb(color); return (0.299*r+0.587*g+0.114*b)/255 > 0.6 ? '#111111' : '#ffffff'; }
+
+  // Two-sided 95% Student-t critical values for df 1..30; coarse steps beyond that.
+  const T95 = [null,12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086,2.080,2.074,2.069,2.064,2.060,2.056,2.052,2.048,2.045,2.042];
+  function tCrit95(df){ if (df<1) return 0; if (df<=30) return T95[df]; if (df<=40) return 2.03; if (df<=60) return 2.01; if (df<=120) return 1.98; return 1.96; }
+
+  // Lower/upper limits of an error band around the mean of `vals`.
+  function bandBounds(vals, type){
+    const m = mean(vals);
+    if (m===null) return null;
+    if (type==='range') return {lo:Math.min(...vals), hi:Math.max(...vals)};
+    const sd = stdDev(vals), se = vals.length>1 ? sd/Math.sqrt(vals.length) : 0;
+    const d = type==='se' ? se : type==='sd' ? sd : type==='sd2' ? 2*sd : type==='ci95' ? tCrit95(vals.length-1)*se : 0;
+    return {lo:m-d, hi:m+d};
   }
+  function errPair(vals, type){
+    const m = mean(vals);
+    if (m===null || type==='none') return {m, plus:0, minus:0};
+    const b = bandBounds(vals, type);
+    return {m, plus:b.hi-m, minus:m-b.lo};
+  }
+
+  // ---------- chart theme + shared axis / legend builders ----------
+  // `th` carries the colors a figure is drawn with, so the exact same figure builder can
+  // draw for the page (follows light/dark mode) or for export (always dark-on-white).
+  // ---------- number formatting ----------
+  const NUM_MODES = [
+    ['auto','Auto (Plotly default)'], ['plain','Plain (1,234.50)'], ['sci_power','Scientific (×10ⁿ)'],
+    ['sci_e','Scientific (e-notation)'], ['si','SI prefix (k, M, µ)'], ['fixed','Fixed decimals'],
+  ];
+  const SUPERSCRIPT = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+  function toSuperscript(n){ return String(n).split('').map(c=>SUPERSCRIPT[c]||c).join(''); }
+  function formatSI(v, d){
+    if (v===0) return '0';
+    const prefixes = [[1e12,'T'],[1e9,'G'],[1e6,'M'],[1e3,'k'],[1,''],[1e-3,'m'],[1e-6,'µ'],[1e-9,'n']];
+    const a = Math.abs(v);
+    const p = prefixes.find(x=>a>=x[0]) || prefixes[prefixes.length-1];
+    return String(Number((v/p[0]).toFixed(d))) + p[1];
+  }
+  // Text formatting for value labels and the summary table. `nf` = {mode, decimals}.
+  function formatNumber(v, nf){
+    if (v===null || v===undefined || !isFinite(v)) return '';
+    const d = Math.max(0, Math.min(8, nf.decimals|0));
+    switch (nf.mode){
+      case 'plain':     return v.toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+      case 'sci_power': { if (v===0) return '0'; const parts = v.toExponential(d).split('e'); return parts[0]+'×10'+toSuperscript(parseInt(parts[1],10)); }
+      case 'sci_e':     return v.toExponential(d);
+      case 'si':        return formatSI(v, d);
+      case 'fixed':     return v.toFixed(d);
+      default:          return String(Number(v.toPrecision(4)));
+    }
+  }
+  // The same choices as Plotly axis tick settings.
+  // Plain / Fixed / e-notation use d3 format strings, so Decimals is exact and it keeps
+  // working when you zoom. Plotly can't superscript a d3 format, so ×10ⁿ and SI use its own
+  // exponent formats and pick their own digits on axes.
+  function axisNumberProps(nf){
+    const d = Math.max(0, Math.min(8, nf.decimals|0));
+    switch (nf.mode){
+      case 'plain':     return {exponentformat:'none', tickformat:',.'+d+'f', separatethousands:true};
+      case 'fixed':     return {exponentformat:'none', tickformat:'.'+d+'f'};
+      case 'sci_e':     return {tickformat:'.'+d+'e'};
+      case 'sci_power': return {exponentformat:'power', showexponent:'all'};
+      case 'si':        return {exponentformat:'SI', showexponent:'all'};
+      default:          return {};
+    }
+  }
+
+  // Sensible Decimals when the mode changes (axes want fewer digits than labels).
+  function defaultDecimals(mode, isAxis){
+    const axis = {plain:0, fixed:1, sci_e:1, sci_power:1, si:1}, label = {plain:2, fixed:2, sci_e:2, sci_power:2, si:1};
+    const v = (isAxis ? axis : label)[mode];
+    return v===undefined ? 2 : v;
+  }
+  // Binds a mode select + decimals box to nf = {mode, decimals}. The box is disabled where
+  // the chosen format can't honour it, with a tooltip saying why.
+  function bindNumFormat(modeId, decId, nf, isAxis, redraw){
+    const sync = ()=>{
+      const off = nf.mode==='auto' || (isAxis && (nf.mode==='si' || nf.mode==='sci_power'));
+      $(decId).disabled = off;
+      $(decId).title = nf.mode==='auto' ? 'Auto chooses its own digits'
+        : off ? 'On axes this format chooses its own digits (Decimals applies to value labels and the table)' : '';
+    };
+    bindField($(modeId), nf, 'mode', 'text', ()=>{
+      nf.decimals = defaultDecimals(nf.mode, isAxis);
+      $(decId).value = nf.decimals;
+      sync(); redraw();
+    });
+    bindField($(decId), nf, 'decimals', 'int', redraw, {min:0, max:8});
+    sync();
+  }
+
+  // ---------- bar fills ----------
+  const BAR_FILLS = {
+    solid:    {n:'Solid',            shape:null},
+    slash:    {n:'Hatch  /',         shape:'/'},
+    backslash:{n:'Hatch  \\',        shape:'\\'},
+    cross:    {n:'Cross-hatch',      shape:'x'},
+    grid:     {n:'Grid',             shape:'+'},
+    dots:     {n:'Dots',             shape:'.'},
+    horiz:    {n:'Horizontal lines', shape:'-'},
+    vert:     {n:'Vertical lines',   shape:'|'},
+    hollow:   {n:'Outline only',     shape:null},
+  };
+  function lighten(color, amt){ const [r,g,b] = hexToRgb(color); return rgbToHex(r+(255-r)*amt, g+(255-g)*amt, b+(255-b)*amt); }
+  // Marker (fill + outline) for a bar trace. `base` is one color or one per bar.
+  function barMarker(base, bs, L, th){
+    const arr = Array.isArray(base), map = fn => arr ? base.map(fn) : fn(base);
+    const hollow = bs.fillStyle==='hollow';
+    const outlineColor = map(c => L.barOutlineColor==='ink' ? th.fg : L.barOutlineColor==='same' ? c : darken(c,0.35));
+    const m = {color: hollow ? 'rgba(0,0,0,0)' : base, opacity:L.barOpacity};
+    if (hollow) m.line = {width:Math.max(1.5, L.barOutlineWidth), color:base};
+    else m.line = L.barOutline ? {width:L.barOutlineWidth, color:outlineColor} : {width:0};
+    const shape = (BAR_FILLS[bs.fillStyle] || BAR_FILLS.solid).shape;
+    if (shape){
+      const bg = bs.patBg==='white' ? th.panelBg : bs.patBg==='tint' ? map(c=>lighten(c,0.82)) : 'rgba(0,0,0,0)';
+      m.pattern = {shape, fgcolor:base, bgcolor:bg, size:bs.patSize, solidity:bs.patSolidity};
+    }
+    return m;
+  }
+
+  function pageTheme(){ return {fg:themeColor('--fg'), border:themeColor('--border'), panelBg:themeColor('--panel'), muted:themeColor('--muted')}; }
+  const PRINT_THEME = {fg:'#111111', border:'#d6d6d6', panelBg:'#ffffff', muted:'#555555'};
+
+  function gridProps(L, th){
+    switch (L.gridStyle){
+      case 'dotted': return {showgrid:true, gridcolor:hexToRgba(th.fg,0.30), gridwidth:0.8, griddash:'dot'};
+      case 'solid':  return {showgrid:true, gridcolor:hexToRgba(th.fg,0.22), gridwidth:1};
+      case 'cutout': return {showgrid:true, gridcolor:th.panelBg, gridwidth:1.4};
+      default:       return {showgrid:true, gridcolor:hexToRgba(th.fg,0.11), gridwidth:0.8};
+    }
+  }
+  function axisProps(L, th, o){
+    const ff = th.fontFamily || L.fontFamily;
+    const ax = {
+      title:{text:o.title, font:{size:o.titleSize, family:ff, color:th.fg}, standoff:6},
+      tickfont:{size:o.tickSize, family:ff, color:th.fg},
+      color:th.fg, automargin:true, zeroline:false,
+      showline:L.frame!=='none', linecolor:th.fg, linewidth:L.axisWidth, mirror:L.frame==='box',
+      ticks:L.tickDir==='none' ? '' : L.tickDir, ticklen:L.tickLen, tickwidth:Math.max(0.5, L.axisWidth*0.9), tickcolor:th.fg,
+    };
+    if (o.showGrid) Object.assign(ax, gridProps(L, th)); else ax.showgrid = false;
+    if (o.num && !o.category) Object.assign(ax, axisNumberProps(o.num));
+    if (L.minorTicks && L.tickDir!=='none' && !o.category){
+      ax.minor = {ticks:L.tickDir, ticklen:Math.max(2, Math.round(L.tickLen*0.55)), tickwidth:Math.max(0.5, L.axisWidth*0.75), tickcolor:th.fg, showgrid:false};
+    }
+    if (o.type) ax.type = o.type;
+    if (o.tickangle!==undefined) ax.tickangle = o.tickangle;
+    return ax;
+  }
+  function legendProps(pos, st, th, L, o){
+    o = o || {};
+    const r = {marginR:o.marginR||16, marginT:o.marginT||10, marginB:o.marginB||44, legend:undefined};
+    if (pos==='hidden') return r;
+    // traceorder is pinned: Plotly silently reverses the legend when any trace uses a fill (our error bands).
+    const base = {traceorder:'normal', font:{size:st.fontLegend, family:th.fontFamily || L.fontFamily, color:th.fg}, bgcolor:hexToRgba(th.panelBg, st.legendAlpha)};
+    if (st.legendBorder){ base.bordercolor = hexToRgba(th.fg,0.5); base.borderwidth = 0.8; }
+    if (pos==='right'){ r.legend = {...base, orientation:'v', x:1.02, y:1, xanchor:'left'}; r.marginR = Math.max(r.marginR,132); }
+    else if (pos==='top'){ r.legend = {...base, orientation:'h', x:0, y:1.16}; r.marginT += 34; }
+    else if (pos==='inside'){ r.legend = {...base, orientation:'v', x:0.98, y:0.98, xanchor:'right', yanchor:'top'}; }
+    else { r.legend = {...base, orientation:'h', x:0, y:(o.bottomY!==undefined ? o.bottomY : -0.24)}; r.marginB = o.bottomMargin || 72; }
+    return r;
+  }
+
+  // ---------- preset / palette application ----------
+  function applyPalette(f, key){
+    const pal = (PALETTES[key] || PALETTES.okabe).colors;
+    DEFAULT_PALETTE = pal;
+    f.look.palette = key;
+    if (f.parsed && f.parsed.N) f.seriesColor = Array.from({length:f.parsed.N}, (_,i)=> pal[i%pal.length]);
+    groups.forEach((g,i)=>{ g.color = pal[i%pal.length]; });
+  }
+  // `which` = 'matrix' (distribution chart: also recolors lines and groups) or 'bar'.
+  function applyPreset(f, key, which){
+    const P = PRESETS[key]; if (!P) return;
+    if (which==='matrix'){
+      f.look = Object.assign({}, f.look, P.look, {preset:key});
+      Object.assign(f.chartStyle, P.style);
+      applyPalette(f, P.look.palette);
+    } else {
+      f.barLook = Object.assign({}, f.barLook, P.look, {preset:key});
+      Object.assign(f.barStyle, P.style);
+      const pal = (PALETTES[P.look.palette] || PALETTES.okabe).colors;
+      f.barStyle.color = pal[0];
+      f.barStyle.overlayColor = pal[1%pal.length];
+    }
+  }
+
+  // The default camera button exports the on-screen chart as-is: page colors (light text
+  // in dark mode), transparent background, and screen resolution. It's replaced by an
+  // "Export figure" button that re-draws the chart off-screen in print colors at the
+  // requested physical size and DPI (see exportChart).
+  function plotConfig(kind, style){
+    const cfg = {displaylogo:false, responsive:true};
+    if (kind==='matrix' || kind==='stat'){
+      cfg.modeBarButtonsToRemove = ['toImage'];
+      cfg.modeBarButtonsToAdd = [{
+        name:'exportFigure', title:"Export figure (uses this chart's Export settings)",
+        icon:Plotly.Icons.camera, click:()=>{ exportChart(kind); }
+      }];
+    }
+    return cfg;
+  }
+
+  // ---------- figure export ----------
+  const CRC_TABLE = (()=>{
+    const t = new Uint32Array(256);
+    for (let n=0;n<256;n++){ let c=n; for (let k=0;k<8;k++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1); t[n]=c>>>0; }
+    return t;
+  })();
+  function crc32(bytes){
+    let c = 0xFFFFFFFF;
+    for (let i=0;i<bytes.length;i++) c = CRC_TABLE[(c^bytes[i])&0xFF] ^ (c>>>8);
+    return (c ^ 0xFFFFFFFF)>>>0;
+  }
+  // Writes a pHYs chunk so Word / Illustrator / Affinity open the PNG at its intended
+  // physical size instead of assuming 72 or 96 dpi.
+  function pngSetDpi(bytes, dpi){
+    const ppm = Math.round(dpi/0.0254);
+    const out = [bytes.subarray(0,8)];
+    let pos = 8, inserted = false;
+    while (pos < bytes.length){
+      const len = new DataView(bytes.buffer, bytes.byteOffset+pos, 4).getUint32(0);
+      const type = String.fromCharCode(bytes[pos+4],bytes[pos+5],bytes[pos+6],bytes[pos+7]);
+      const end = pos + 12 + len;
+      if (type!=='pHYs') out.push(bytes.subarray(pos, end));
+      if (type==='IHDR' && !inserted){
+        const chunk = new Uint8Array(21), dv = new DataView(chunk.buffer);
+        dv.setUint32(0, 9); chunk.set([0x70,0x48,0x59,0x73],4);
+        dv.setUint32(8, ppm); dv.setUint32(12, ppm); chunk[16] = 1;
+        dv.setUint32(17, crc32(chunk.subarray(4,17)));
+        out.push(chunk); inserted = true;
+      }
+      pos = end;
+    }
+    const total = out.reduce((a,b)=>a+b.length,0), res = new Uint8Array(total);
+    let o = 0; out.forEach(b=>{ res.set(b,o); o+=b.length; });
+    return res;
+  }
+  function downloadBlob(blob, name){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  function unitToInches(v, unit){ return unit==='in' ? v : unit==='mm' ? v/25.4 : v/2.54; }
+  function inchesToUnit(v, unit){ return unit==='in' ? v : unit==='mm' ? v*25.4 : v*2.54; }
+  // Layout is done in CSS px (96 per inch), so a 16 cm figure is ~605 px wide and an 11 px
+  // font is ~8.25 pt in print — export DPI then only sets how finely that is rasterized.
+  function exportPixelSize(ex, el, style, kind){
+    if (ex.sizeMode==='custom') return {w:Math.round(unitToInches(ex.w,ex.unit)*96), h:Math.round(unitToInches(ex.h,ex.unit)*96)};
+    // "As on screen" means the figure size you set (800 × 600 by default), not however
+    // much room the page happens to have for it right now.
+    const wSet = kind==='matrix' ? style.plotWidth : style.width;
+    const hSet = kind==='matrix' ? style.plotHeight : style.height;
+    return {w:Math.round(wSet || el.clientWidth) || 800, h:Math.round(hSet || el.clientHeight) || 600};
+  }
+
+  const PDF_LIBS = {
+    jspdf:'https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js',
+    svg2pdf:'https://cdn.jsdelivr.net/npm/svg2pdf.js@2.8.1/dist/svg2pdf.umd.min.js',
+  };
+  let pdfLibsPromise = null;
+  function loadScriptOnce(url){
+    return new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = url; s.onload = resolve; s.onerror = ()=>reject(new Error('Could not load '+url));
+      document.head.appendChild(s);
+    });
+  }
+  // PDF export needs jsPDF + svg2pdf.js; they're only fetched the first time it's used.
+  function ensurePdfLibs(){
+    if (window.jspdf && window.svg2pdf) return Promise.resolve();
+    if (!pdfLibsPromise) pdfLibsPromise = loadScriptOnce(PDF_LIBS.jspdf).then(()=>loadScriptOnce(PDF_LIBS.svg2pdf)).catch(err=>{ pdfLibsPromise = null; throw err; });
+    return pdfLibsPromise;
+  }
+  function svgFromDataUrl(url){
+    const comma = url.indexOf(',');
+    return /;base64$/.test(url.slice(0,comma)) ? atob(url.slice(comma+1)) : decodeURIComponent(url.slice(comma+1));
+  }
+
+  async function exportChart(kind){
+    const f = files[activeFile];
+    if (!f || f.error || !f.parsed) return;
+    const p = f.parsed;
+    const style = kind==='matrix' ? f.chartStyle : f.barStyle;
+    const look = kind==='matrix' ? f.look : f.barLook;
+    const ex = style.export;
+    const base = ex.theme==='page' ? pageTheme() : PRINT_THEME;
+    const th = Object.assign({}, base, {fontFamily: exportSafeFont(look.fontFamily)});
+    const fig = kind==='matrix' ? buildMatrixFigure(f,p,th) : buildStatFigure(f,p,th);
+    if (!fig) return;
+    const el = $(kind==='matrix' ? 'matrixChart' : 'statChart');
+    const sz = exportPixelSize(ex, el, style, kind);
+    fig.layout.width = sz.w; fig.layout.height = sz.h; fig.layout.autosize = false;
+    fig.layout.paper_bgcolor = ex.bg==='transparent' ? 'rgba(0,0,0,0)' : th.panelBg;
+
+    const px = kind==='matrix' ? 'ex' : 'bx';
+    const btn = $(px+'Btn'), info = $(px+'Info');
+    if (btn) btn.disabled = true;
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-20000px;top:0;width:'+sz.w+'px;height:'+sz.h+'px;';
+    document.body.appendChild(host);
+    try {
+      await Plotly.newPlot(host, fig.traces, fig.layout, {staticPlot:true, displayModeBar:false, displaylogo:false});
+      const stamp = kind==='matrix' ? 'distribution' : 'bar-chart';
+      if (ex.format==='svg'){
+        const url = await Plotly.toImage(host, {format:'svg', width:sz.w, height:sz.h});
+        downloadBlob(new Blob([svgFromDataUrl(url)], {type:'image/svg+xml'}), stamp+'_'+sz.w+'x'+sz.h+'px.svg');
+      } else if (ex.format==='pdf'){
+        await ensurePdfLibs();
+        const url = await Plotly.toImage(host, {format:'svg', width:sz.w, height:sz.h});
+        const holder = document.createElement('div');
+        holder.style.cssText = 'position:fixed;left:-30000px;top:0;';
+        holder.innerHTML = svgFromDataUrl(url);
+        document.body.appendChild(holder);
+        try {
+          const w = sz.w*0.75, h = sz.h*0.75;      // CSS px -> PDF points
+          const doc = new window.jspdf.jsPDF({unit:'pt', format:[w,h], orientation: w>=h?'landscape':'portrait', compress:true});
+          await window.svg2pdf.svg2pdf(holder.querySelector('svg'), doc, {x:0, y:0, width:w, height:h});
+          downloadBlob(doc.output('blob'), stamp+'_'+sz.w+'x'+sz.h+'px.pdf');
+        } finally { holder.remove(); }
+      } else {
+        // Keep the raster under the browser's canvas limits (side and total area).
+        let scale = Math.max(0.5, ex.dpi/96);
+        scale = Math.min(scale, 16000/sz.w, 16000/sz.h, Math.sqrt(140e6/(sz.w*sz.h)));
+        const url = await Plotly.toImage(host, {format:'png', width:sz.w, height:sz.h, scale});
+        const bin = atob(url.slice(url.indexOf(',')+1));
+        let bytes = new Uint8Array(bin.length);
+        for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+        const effDpi = Math.round(scale*96);
+        bytes = pngSetDpi(bytes, effDpi);
+        downloadBlob(new Blob([bytes], {type:'image/png'}), stamp+'_'+Math.round(sz.w*scale)+'x'+Math.round(sz.h*scale)+'px_'+effDpi+'dpi.png');
+        if (info && effDpi < ex.dpi) info.textContent = 'Saved at '+effDpi+' dpi — the browser can\'t make a larger canvas for this figure size.';
+      }
+    } catch (err){
+      console.error(err);
+      if (info) info.textContent = 'Export failed: '+(err && err.message || err);
+    } finally {
+      try { Plotly.purge(host); } catch(e){}
+      host.remove();
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function exportControlsHtml(px){
+    return ''+
+    '<div class="field-row">'+
+      '<div class="field"><label>Format</label><select id="'+px+'Format"><option value="png">PNG</option><option value="pdf">PDF (vector)</option><option value="svg">SVG (vector)</option></select></div>'+
+      '<div class="field"><label>DPI (PNG)</label><input type="number" id="'+px+'Dpi" min="72" max="1200" step="50"></div>'+
+    '</div>'+
+    '<div class="field"><label>Size</label><select id="'+px+'Size"><option value="screen">As set in Size (on screen)</option><option value="custom">Custom physical size</option></select></div>'+
+    '<div class="field-row" id="'+px+'Dims">'+
+      '<div class="field"><label>Width</label><input type="number" id="'+px+'W" min="1" step="0.5"></div>'+
+      '<div class="field"><label>Height</label><input type="number" id="'+px+'H" min="1" step="0.5"></div>'+
+      '<div class="field" style="flex:0 0 62px;"><label>Unit</label><select id="'+px+'Unit"><option value="cm">cm</option><option value="mm">mm</option><option value="in">in</option></select></div>'+
+    '</div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label>Colors</label><select id="'+px+'Theme"><option value="print">Print (dark on light)</option><option value="page">Match page</option></select></div>'+
+      '<div class="field"><label>Background</label><select id="'+px+'Bg"><option value="white">White</option><option value="transparent">Transparent</option></select></div>'+
+    '</div>'+
+    '<div class="row-actions"><button class="btn small primary" id="'+px+'Btn">Export figure</button></div>'+
+    '<div class="export-info" id="'+px+'Info"></div>';
+  }
+  function mountExportControls(){
+    $('exportSlotMatrix').innerHTML = exportControlsHtml('ex');
+    $('exportSlotBar').innerHTML = exportControlsHtml('bx');
+  }
+  function wireExportControls(px, style, kind){
+    const ex = style.export, g = s=>$(px+s);
+    const el = ()=>$(kind==='matrix'?'matrixChart':'statChart');
+    function refresh(){
+      g('Dims').style.display = ex.sizeMode==='custom' ? 'flex' : 'none';
+      g('Dpi').disabled = ex.format!=='png';
+      const sz = exportPixelSize(ex, el(), style, kind);
+      const inch = v=>Math.round(v/96*100)/100;
+      if (ex.format==='png'){
+        const sc = ex.dpi/96;
+        g('Info').textContent = Math.round(sz.w*sc)+' × '+Math.round(sz.h*sc)+' px at '+ex.dpi+' dpi  ('+inch(sz.w)+' × '+inch(sz.h)+' in)';
+      } else {
+        g('Info').textContent = (ex.format==='pdf' ? 'Vector PDF, text stays selectable. ' : 'Vector SVG. ')+'Page '+inch(sz.w)+' × '+inch(sz.h)+' in.'
+          + (ex.format==='pdf' ? ' Loads jsPDF from a CDN the first time.' : '');
+      }
+    }
+    g('Format').value = ex.format; g('Dpi').value = ex.dpi; g('Size').value = ex.sizeMode;
+    g('Unit').value = ex.unit; g('W').value = ex.w; g('H').value = ex.h; g('Theme').value = ex.theme; g('Bg').value = ex.bg;
+    g('Format').onchange = e=>{ ex.format = e.target.value; refresh(); };
+    g('Dpi').oninput = e=>{ ex.dpi = Math.max(72, Math.min(1200, parseInt(e.target.value,10)||600)); refresh(); };
+    g('Size').onchange = e=>{ ex.sizeMode = e.target.value; refresh(); };
+    g('Unit').onchange = e=>{
+      const nu = e.target.value, wi = unitToInches(ex.w,ex.unit), hi = unitToInches(ex.h,ex.unit);
+      ex.unit = nu; ex.w = Math.round(inchesToUnit(wi,nu)*100)/100; ex.h = Math.round(inchesToUnit(hi,nu)*100)/100;
+      g('W').value = ex.w; g('H').value = ex.h; refresh();
+    };
+    g('W').oninput = e=>{ ex.w = parseFloat(e.target.value)||ex.w; refresh(); };
+    g('H').oninput = e=>{ ex.h = parseFloat(e.target.value)||ex.h; refresh(); };
+    g('Theme').onchange = e=>{ ex.theme = e.target.value; };
+    g('Bg').onchange = e=>{ ex.bg = e.target.value; };
+    g('Btn').onclick = ()=> exportChart(kind);
+    // Size edits elsewhere change what "as on screen" means, so keep this line current.
+    refreshExportInfo[px] = refresh;
+    refresh();
+  }
+  const refreshExportInfo = {};
 
   const $ = id => document.getElementById(id);
 
@@ -1022,7 +1509,8 @@
           seriesMarkerShape:null, seriesMarkerSize:null,
           colorMode:'manual', colorRev:false, varyMarkerShape:false, expandedRow:null,
           statShowLabels:false,
-          chartStyle:defaultChartStyle(), barStyle:defaultBarStyle()
+          chartStyle:defaultChartStyle(), barStyle:defaultBarStyle(),
+          look:defaultLook(), barLook:defaultLook(), seriesBarColor:null
         };
         if (!firstNew) firstNew = f.name;
         pending--;
@@ -1111,7 +1599,7 @@
       $('matrixControlsPanel').style.display='none';
       $('chartStylePanel').style.display='none';
       $('groupsPanel').style.display='none';
-      $('barSettingsPanel').style.display='none';
+      $('barSettingsPanel').style.display='none'; $('statChartPanel').style.display='none'; $('groupStatsSection').style.display='none';
       $('matrixSection').style.display='none';
       $('perSampleSection').style.display='none';
       $('otherSection').style.display='none';
@@ -1131,7 +1619,7 @@
       $('matrixControlsPanel').style.display='none';
       $('chartStylePanel').style.display='none';
       $('groupsPanel').style.display='none';
-      $('barSettingsPanel').style.display='none';
+      $('barSettingsPanel').style.display='none'; $('statChartPanel').style.display='none'; $('groupStatsSection').style.display='none';
       $('matrixSection').style.display='none';
       $('perSampleSection').style.display='none';
       $('otherSection').style.display='none';
@@ -1179,7 +1667,7 @@
     const hasMatrix = p.matrices.length>0;
     $('matrixControlsPanel').style.display = hasMatrix ? 'block' : 'none';
     if (!hasMatrix){ $('chartStylePanel').style.display='none'; $('groupsPanel').style.display='none';
-      $('barSettingsPanel').style.display='none'; return; }
+      $('barSettingsPanel').style.display='none'; $('statChartPanel').style.display='none'; $('groupStatsSection').style.display='none'; return; }
 
     const pickerField = $('matrixPickerField');
     const picker = $('matrixPicker');
@@ -1428,7 +1916,8 @@
         label: (label||'').trim() || autoLabel,
         color: DEFAULT_PALETTE[groups.length % DEFAULT_PALETTE.length],
         width: groupWidthFromStyle(cs), dash: cs.lineDash, showMarkers: cs.showMarkers, markerSize: cs.markerSize,
-        band:'none', expanded:false, visible:true,
+        band:'none', bandOpacity:null, bandFill:null, bandEdge:null, bandColor:null, barColor:null,
+        expanded:false, visible:true,
       });
     }
 
@@ -1465,7 +1954,7 @@
     };
     $('groupMatchStyleBtn').onclick = ()=>{
       const cs = (files[activeFile] && files[activeFile].chartStyle) || defaultChartStyle();
-      groups.forEach(g=>{ g.width = groupWidthFromStyle(cs); g.dash = cs.lineDash; g.showMarkers = cs.showMarkers; g.markerSize = cs.markerSize; });
+      groups.forEach(g=>{ g.width = groupWidthFromStyle(cs); g.dash = cs.lineDash; g.showMarkers = cs.showMarkers; g.markerSize = cs.markerSize; g.bandOpacity = g.bandFill = g.bandEdge = g.bandColor = null; });
       renderGroupsPanel(); rerenderActive();
     };
 
@@ -1554,14 +2043,46 @@
         mSel.addEventListener('change', ()=>{ g.showMarkers = mSel.value==='on'; rerenderActive(); });
         mf.appendChild(mSel);
 
-        const bf=document.createElement('div'); bf.className='field'; bf.innerHTML='<label>Error band</label>';
-        const bSel=document.createElement('select');
-        bSel.innerHTML='<option value="none">None</option><option value="se">± SE</option><option value="sd">± SD</option>';
-        bSel.value=g.band;
-        bSel.addEventListener('change', ()=>{ g.band=bSel.value; rerenderActive(); });
-        bf.appendChild(bSel);
+        const mkField = (label, node)=>{ const d=document.createElement('div'); d.className='field'; d.innerHTML='<label>'+label+'</label>'; d.appendChild(node); return d; };
+        const mkSelect = (html, value, onChange)=>{ const s=document.createElement('select'); s.innerHTML=html; s.value=value; s.addEventListener('change', ()=>onChange(s.value)); return s; };
+        const activeStyle = (files[activeFile] && files[activeFile].chartStyle) || defaultChartStyle();
 
-        exp.appendChild(wf); exp.appendChild(df); exp.appendChild(mf); exp.appendChild(bf);
+        const bf = mkField('Error band', mkSelect(
+          '<option value="none">None</option><option value="se">± SE</option><option value="sd">± SD</option><option value="sd2">± 2 SD</option><option value="ci95">95% CI</option><option value="range">Min–max</option>',
+          g.band, v=>{ g.band=v; rerenderActive(); }));
+
+        const boIn = document.createElement('input'); boIn.type='number'; boIn.min='0.02'; boIn.max='1'; boIn.step='0.02';
+        boIn.placeholder = activeStyle.bandOpacity; boIn.value = g.bandOpacity===null ? '' : g.bandOpacity;
+        boIn.addEventListener('input', ()=>{ g.bandOpacity = boIn.value==='' ? null : Math.max(0.02, Math.min(1, parseFloat(boIn.value)||0.12)); rerenderActive(); });
+        const bof = mkField('Band opacity', boIn);
+
+        const bff = mkField('Band fill', mkSelect(
+          '<option value="">Default</option>'+Object.keys(BAND_FILLS).map(k=>'<option value="'+k+'">'+BAND_FILLS[k].n+'</option>').join(''),
+          g.bandFill||'', v=>{ g.bandFill = v||null; rerenderActive(); }));
+
+        const bef = mkField('Band edge', mkSelect(
+          '<option value="">Default</option><option value="none">None</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>',
+          g.bandEdge||'', v=>{ g.bandEdge = v||null; rerenderActive(); }));
+
+        const mkColorAuto = (label, getVal, setVal, fallback)=>{
+          const wrapF = document.createElement('div'); wrapF.className='field'; wrapF.style.flexBasis='100%';
+          wrapF.innerHTML = '<label>'+label+'</label>';
+          const row = document.createElement('div'); row.style.cssText='display:flex;gap:8px;align-items:center;';
+          const inp = document.createElement('input'); inp.type='color'; inp.value = getVal() || fallback();
+          inp.style.cssText='width:34px;height:24px;padding:1px;border:1px solid var(--border);border-radius:4px;background:none;flex:0 0 auto;';
+          const lab = document.createElement('label'); lab.className='toggle-row'; lab.style.margin='0';
+          lab.innerHTML = '<input type="checkbox"> same as line';
+          const chk = lab.querySelector('input'); chk.checked = !getVal();
+          inp.addEventListener('input', ()=>{ setVal(inp.value); chk.checked=false; });
+          chk.addEventListener('change', ()=>{ setVal(chk.checked ? null : inp.value); });
+          row.appendChild(inp); row.appendChild(lab); wrapF.appendChild(row);
+          return wrapF;
+        };
+        const bcf = mkColorAuto('Band color', ()=>g.bandColor, v=>{ g.bandColor=v; rerenderActive(); }, ()=>g.color);
+        const bbf = mkColorAuto('Bar color (bar chart)', ()=>g.barColor,
+          v=>{ g.barColor=v; if (v && files[activeFile]) files[activeFile].barStyle.barColorMode='custom'; rerenderActive(); }, ()=>g.color);
+
+        [wf,df,mf,bf,bof,bff,bef,bcf,bbf].forEach(n=>exp.appendChild(n));
         list.appendChild(exp);
       }
     });
@@ -1579,70 +2100,164 @@
     return sampleColormap(groupColorMode, t);
   }
 
+  // ---------- settings-panel plumbing ----------
+  // Two-way binds one form control to obj[key]. type: 'text' | 'check' | 'num' | 'int'.
+  // Out-of-range numbers are clamped in the model but the box keeps what you typed, so
+  // you can type "12" through the intermediate "1" without being corrected mid-keystroke.
+  function bindField(el, obj, key, type, onChange, o){
+    o = o || {};
+    if (type==='check') el.checked = !!obj[key];
+    else el.value = (obj[key]===undefined || obj[key]===null) ? '' : obj[key];
+    const evt = (type==='check' || el.tagName==='SELECT') ? 'onchange' : 'oninput';
+    el[evt] = ()=>{
+      let v;
+      if (type==='check') v = el.checked;
+      else if (type==='num' || type==='int'){
+        if (el.value==='' && o.allowEmpty) v = '';
+        else {
+          v = parseFloat(el.value);
+          if (!isFinite(v)) return;
+          if (type==='int') v = Math.round(v);
+          if (o.min!==undefined) v = Math.max(o.min, v);
+          if (o.max!==undefined) v = Math.min(o.max, v);
+        }
+      } else v = el.value;
+      obj[key] = v;
+      if (onChange) onChange(v);
+    };
+  }
+
+  // Axes / fonts / legend sections are identical for both charts, so they're generated
+  // once from a template with an id prefix ('ds' = distribution, 'br' = bar).
+  function numRowHtml(idBase, label){
+    return '<div class="field-row" style="align-items:flex-end;">'+
+      '<div class="field" style="flex:2;"><label>'+label+'</label><select id="'+idBase+'Mode"></select></div>'+
+      '<div class="field" style="flex:0 0 64px;"><label>Decimals</label><input type="number" id="'+idBase+'Dec" min="0" max="8" step="1"></div>'+
+    '</div>';
+  }
+  const NUM_HINT = '<p class="hint">Decimals applies to Plain, Fixed and e-notation on axes. SI and ×10ⁿ pick their own digits on axes, and use Decimals in value labels. Each row is independent.</p>';
+
+  function axesSectionHtml(px, extra){
+    return ''+
+    '<div class="field-row">'+
+      '<div class="field"><label>Frame</label><select id="'+px+'Frame"><option value="box">Box</option><option value="axes">Left + bottom only</option><option value="none">None</option></select></div>'+
+      '<div class="field"><label>Ticks</label><select id="'+px+'TickDir"><option value="inside">Inside</option><option value="outside">Outside</option><option value="none">None</option></select></div>'+
+    '</div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label>Line width</label><input type="number" id="'+px+'AxisW" min="0.25" max="4" step="0.25"></div>'+
+      '<div class="field"><label>Tick length</label><input type="number" id="'+px+'TickLen" min="0" max="14" step="1"></div>'+
+    '</div>'+
+    '<label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="'+px+'Minor"> Minor ticks</label>'+
+    '<label class="toggle-row"><input type="checkbox" id="'+px+'GridOn"> Gridlines</label>'+
+    '<div class="field" style="margin-top:6px;"><label>Grid style</label><select id="'+px+'GridStyle"><option value="light">Light</option><option value="dotted">Dotted</option><option value="solid">Solid</option><option value="cutout">Cut-out (use with tint)</option></select></div>'+
+    '<label class="toggle-row"><input type="checkbox" id="'+px+'Tint"> Tinted plot area</label>'+
+    (extra||'');
+  }
+  function fontsSectionHtml(px, withTitle){
+    return ''+
+    '<div class="field"><label>Font family</label><select id="'+px+'FontFamily"></select></div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label>Tick labels</label><input type="number" id="'+px+'FontTick" min="6" max="28" step="1"></div>'+
+      '<div class="field"><label>Axis titles</label><input type="number" id="'+px+'FontAxis" min="6" max="32" step="1"></div>'+
+    '</div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label>Legend</label><input type="number" id="'+px+'FontLegend" min="6" max="28" step="1"></div>'+
+      (withTitle ? '<div class="field"><label>Chart title</label><input type="number" id="'+px+'FontTitle" min="6" max="36" step="1"></div>' : '<div class="field"></div>')+
+    '</div>'+
+    '<p class="hint">Sizes are in px; multiply by 0.75 for points (11 px ≈ 8 pt).</p>';
+  }
+  function legendSectionHtml(px, withAuto){
+    return ''+
+    '<div class="field"><label>Position</label><select id="'+px+'LegPos">'+
+      (withAuto ? '<option value="auto">Auto (on with overlay)</option>' : '')+
+      '<option value="bottom">Bottom</option><option value="right">Right</option><option value="top">Top</option><option value="inside">Inside</option><option value="hidden">Hidden</option></select></div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label>Opacity</label><input type="number" id="'+px+'LegAlpha" min="0" max="1" step="0.05"></div>'+
+      '<div class="field" style="flex:0 0 auto; display:flex; align-items:flex-end;"><label class="toggle-row" style="margin-top:0;"><input type="checkbox" id="'+px+'LegBorder"> Border</label></div>'+
+    '</div>';
+  }
+
+  // Wires the Preset select plus the axes / fonts / legend sections of one chart's panel.
+  function wireLookSections(px, kind, f, p){
+    const L = kind==='matrix' ? f.look : f.barLook;
+    const st = kind==='matrix' ? f.chartStyle : f.barStyle;
+    const g = s=>$(px+s);
+    const redraw = ()=> kind==='matrix' ? renderMatrixChart(f,p) : renderStatChart(f,p);
+    const onLook = ()=>{ L.preset = 'custom'; g('Preset').value = 'custom'; redraw(); };
+
+    g('Preset').value = L.preset;
+    g('Preset').onchange = e=>{
+      if (e.target.value==='custom') return;
+      applyPreset(f, e.target.value, kind);
+      if (kind==='matrix'){ renderMatrixControls(f,p); renderStatControls(f,p); renderMatrixChart(f,p); renderStatChart(f,p); }
+      else { renderStatControls(f,p); renderStatChart(f,p); }
+    };
+
+    bindField(g('Frame'),    L,'frame','text', onLook);
+    bindField(g('TickDir'),  L,'tickDir','text', onLook);
+    bindField(g('AxisW'),    L,'axisWidth','num', onLook, {min:0.25, max:4});
+    bindField(g('TickLen'),  L,'tickLen','num', onLook, {min:0, max:14});
+    bindField(g('Minor'),    L,'minorTicks','check', onLook);
+    bindField(g('GridOn'),   st,'showGrid','check', onLook);
+    bindField(g('GridStyle'),L,'gridStyle','text', onLook);
+    bindField(g('Tint'),     L,'plotTint','check', onLook);
+
+    bindField(g('FontFamily'), L,'fontFamily','text', redraw);
+    bindField(g('FontTick'),   st,'fontTick','int', redraw, {min:6, max:28});
+    bindField(g('FontAxis'),   st,'fontAxisTitle','int', redraw, {min:6, max:32});
+    bindField(g('FontLegend'), st,'fontLegend','int', redraw, {min:6, max:28});
+    if (g('FontTitle')) bindField(g('FontTitle'), st,'fontChartTitle','int', redraw, {min:6, max:36});
+
+    bindField(g('LegPos'),    st,'legendPos','text', redraw);
+    bindField(g('LegAlpha'),  st,'legendAlpha','num', onLook, {min:0, max:1});
+    bindField(g('LegBorder'), st,'legendBorder','check', onLook);
+  }
+
   function renderChartStyleControls(f, p){
-    $('chartStylePanel').style.display='block';
-    const s = f.chartStyle;
+    $('chartStylePanel').style.display = 'block';
+    const s = f.chartStyle, L = f.look;
+    const redraw = ()=> renderMatrixChart(f,p);
+    const resized = ()=>{ redraw(); if (refreshExportInfo.ex) refreshExportInfo.ex(); };
+    const markCustom = ()=>{ L.preset = 'custom'; $('dsPreset').value = 'custom'; };
 
-    $('chartTitle').value = s.title;
-    $('chartXLabel').value = s.xLabel;
-    $('chartYLabel').value = s.yLabel;
-    $('lineWidth').value = s.lineWidth;
-    $('markerSize').value = s.markerSize;
-    $('lineDash').value = s.lineDash;
-    $('markerShape').value = s.markerShape;
-    $('showMarkers').checked = s.showMarkers;
-    $('plotHeight').value = s.plotHeight;
-    $('plotWidth').value = s.plotWidth;
-    $('showGrid').checked = s.showGrid;
-    $('fontTick').value = s.fontTick;
-    $('fontAxisTitle').value = s.fontAxisTitle;
-    $('fontLegend').value = s.fontLegend;
-    $('fontChartTitle').value = s.fontChartTitle;
-    $('legendPos').value = s.legendPos;
-    $('legendAlpha').value = s.legendAlpha;
-    $('legendBorder').checked = s.legendBorder;
-    $('exportFormat').value = s.exportFormat;
-    $('exportScale').value = s.exportScale;
-    $('exportBg').value = s.exportBg;
+    bindField($('chartTitle'),  s,'title','text', redraw);
+    bindField($('chartXLabel'), s,'xLabel','text', redraw);
+    bindField($('chartYLabel'), s,'yLabel','text', redraw);
+    bindField($('plotWidth'),   s,'plotWidth','int', resized, {min:300, max:2400, allowEmpty:true});
+    bindField($('plotHeight'),  s,'plotHeight','int', resized, {min:200, max:1600});
+    bindField($('lineWidth'),   s,'lineWidth','num', redraw, {min:0.25, max:10});
+    bindField($('markerSize'),  s,'markerSize','num', redraw, {min:0, max:20});
+    bindField($('lineDash'),    s,'lineDash','text', redraw);
+    bindField($('markerShape'), s,'markerShape','text', redraw);
+    bindField($('showMarkers'), s,'showMarkers','check', redraw);
+    bindField($('bandOpacity'), s,'bandOpacity','num', redraw, {min:0.02, max:1});
+    bindField($('bandFill'),    s,'bandFill','text', redraw);
+    bindField($('bandEdge'),    s,'bandEdge','text', redraw);
+    bindField($('dsMarkerEdge'), L,'markerEdge','check', ()=>{ markCustom(); redraw(); });
+    bindNumFormat('dsNumXMode', 'dsNumXDec', s.numX, true, redraw);
+    bindNumFormat('dsNumYMode', 'dsNumYDec', s.numY, true, redraw);
 
-    $('chartTitle').oninput = e=>{ s.title=e.target.value; renderMatrixChart(f,p); };
-    $('chartXLabel').oninput = e=>{ s.xLabel=e.target.value; renderMatrixChart(f,p); };
-    $('chartYLabel').oninput = e=>{ s.yLabel=e.target.value; renderMatrixChart(f,p); };
-    $('lineWidth').oninput = e=>{ s.lineWidth=parseFloat(e.target.value)||1.6; renderMatrixChart(f,p); };
-    $('markerSize').oninput = e=>{ s.markerSize=parseFloat(e.target.value)||0; renderMatrixChart(f,p); };
-    $('lineDash').onchange = e=>{ s.lineDash=e.target.value; renderMatrixChart(f,p); };
-    $('markerShape').onchange = e=>{ s.markerShape=e.target.value; renderMatrixChart(f,p); };
-    $('showMarkers').onchange = e=>{ s.showMarkers=e.target.checked; renderMatrixChart(f,p); };
-    $('plotHeight').oninput = e=>{ s.plotHeight=parseInt(e.target.value,10)||380; renderMatrixChart(f,p); };
-    $('plotWidth').oninput = e=>{ s.plotWidth = e.target.value===''? '' : (parseInt(e.target.value,10)||''); renderMatrixChart(f,p); };
-    $('showGrid').onchange = e=>{ s.showGrid=e.target.checked; renderMatrixChart(f,p); };
-    $('fontTick').oninput = e=>{ s.fontTick=parseInt(e.target.value,10)||11; renderMatrixChart(f,p); };
-    $('fontAxisTitle').oninput = e=>{ s.fontAxisTitle=parseInt(e.target.value,10)||13; renderMatrixChart(f,p); };
-    $('fontLegend').oninput = e=>{ s.fontLegend=parseInt(e.target.value,10)||10; renderMatrixChart(f,p); };
-    $('fontChartTitle').oninput = e=>{ s.fontChartTitle=parseInt(e.target.value,10)||14; renderMatrixChart(f,p); };
-    $('legendPos').onchange = e=>{ s.legendPos=e.target.value; renderMatrixChart(f,p); };
-    $('legendAlpha').oninput = e=>{ s.legendAlpha=parseFloat(e.target.value); if(!isFinite(s.legendAlpha))s.legendAlpha=0.82; renderMatrixChart(f,p); };
-    $('legendBorder').onchange = e=>{ s.legendBorder=e.target.checked; renderMatrixChart(f,p); };
-    $('exportFormat').onchange = e=>{ s.exportFormat=e.target.value; renderMatrixChart(f,p); };
-    $('exportScale').oninput = e=>{ s.exportScale=parseInt(e.target.value,10)||3; renderMatrixChart(f,p); };
-    $('exportBg').onchange = e=>{ s.exportBg=e.target.value; renderMatrixChart(f,p); };
+    $('dsPalette').value = L.palette;
+    $('dsPalette').onchange = e=>{
+      applyPalette(f, e.target.value); markCustom();
+      renderMatrixControls(f,p); renderStatControls(f,p); renderMatrixChart(f,p); renderStatChart(f,p);
+    };
+
+    wireLookSections('ds', 'matrix', f, p);
+    wireExportControls('ex', s, 'matrix');
 
     $('resetStyleBtn').onclick = ()=>{
-      f.chartStyle = defaultChartStyle();
-      f.seriesColor = Array.from({length:p.N}, (_,i)=> DEFAULT_PALETTE[i % DEFAULT_PALETTE.length]);
+      f.chartStyle = Object.assign(defaultChartStyle(), {export:s.export});
+      f.look = defaultLook();
+      applyPalette(f, f.look.palette);
       f.seriesLabel = p.sampleLabels.slice();
       f.seriesWidth = new Array(p.N).fill(null);
       f.seriesDash = new Array(p.N).fill(null);
       f.seriesMarkers = new Array(p.N).fill(null);
       f.seriesMarkerShape = new Array(p.N).fill(null);
       f.seriesMarkerSize = new Array(p.N).fill(null);
-      f.colorMode = 'manual';
-      f.colorRev = false;
-      f.varyMarkerShape = false;
-      f.expandedRow = null;
-      renderMatrixControls(f,p);
-      renderMatrixChart(f,p);
-      renderStatChart(f,p);
+      f.colorMode = 'manual'; f.colorRev = false; f.varyMarkerShape = false; f.expandedRow = null;
+      renderMatrixControls(f,p); renderStatControls(f,p); renderMatrixChart(f,p); renderStatChart(f,p);
     };
   }
 
@@ -1674,12 +2289,13 @@
     return {xs, ys};
   }
 
-  function buildGroupTrace(group, xMin, xMax, colorOverride){
+  function buildGroupTrace(group, xMin, xMax, colorOverride, cs, th, L){
     const gf = files[group.file];
     if (!gf || gf.error || !gf.parsed || gf.parsed.mode!=='ragged' || !gf.parsed.matrices.length) return null;
     const gmat = gf.parsed.matrices[Math.min(gf.activeMatrix||0, gf.parsed.matrices.length-1)];
     const color = colorOverride || group.color;
-    const xs=[], means=[], errs=[];
+    const type = group.band || 'none';
+    const xs=[], means=[], lows=[], highs=[];
     gmat.rows.forEach(r=>{
       const x = parseFloat(r[0]);
       if (!isFinite(x)) return;
@@ -1687,21 +2303,80 @@
       if (isFinite(xMax) && x>xMax) return;
       const vals = group.cols.map(c=>{ const raw=r[c+1]; return (raw===undefined||String(raw).trim()==='')?null:parseFloat(raw); }).filter(v=>v!==null && isFinite(v));
       xs.push(x);
-      means.push(vals.length ? mean(vals) : null);
-      errs.push(group.band==='sd' ? stdDev(vals) : group.band==='se' ? stdErr(vals) : 0);
+      const m = vals.length ? mean(vals) : null;
+      means.push(m);
+      const b = (type!=='none' && m!==null) ? bandBounds(vals, type) : null;
+      lows.push(b ? b.lo : null); highs.push(b ? b.hi : null);
     });
     const out = [];
-    if (group.band!=='none' && group.cols.length>1){
-      const lower = means.map((m,i)=> m===null?null:m-errs[i]);
-      const upper = means.map((m,i)=> m===null?null:m+errs[i]);
-      out.push({x:xs, y:lower, type:'scatter', mode:'lines', line:{width:0}, showlegend:false, hoverinfo:'skip'});
-      out.push({x:xs, y:upper, type:'scatter', mode:'lines', line:{width:0}, fill:'tonexty', fillcolor:hexToRgba(color,0.18), showlegend:false, hoverinfo:'skip'});
+    if (type!=='none' && group.cols.length>1){
+      const op = group.bandOpacity ?? cs.bandOpacity;
+      const fillKey = group.bandFill ?? cs.bandFill;
+      const edgeKey = group.bandEdge ?? cs.bandEdge;
+      const base = group.bandColor || color;
+      const edge = edgeKey==='none' ? {width:0} : {width:1, color:hexToRgba(base,0.9), dash:{solid:'solid', dashed:'dash', dotted:'dot'}[edgeKey]};
+      const shape = (BAND_FILLS[fillKey] || BAND_FILLS.solid).shape;
+      const upper = {x:xs, y:highs, type:'scatter', mode:'lines', line:edge, fill:'tonexty', showlegend:false, hoverinfo:'skip'};
+      // Hatch strength scales with the opacity setting (a 12% hatch would be invisible).
+      if (shape) upper.fillpattern = {shape, fgcolor:base, bgcolor:'rgba(0,0,0,0)', size:6, solidity:0.35, fgopacity:Math.min(1, op*3.2)};
+      else upper.fillcolor = hexToRgba(base, op);
+      out.push({x:xs, y:lows, type:'scatter', mode:'lines', line:edge, showlegend:false, hoverinfo:'skip'});
+      out.push(upper);
     }
     out.push({
-      x:xs, y:means, name: group.label, mode: group.showMarkers?'lines+markers':'lines', type:'scatter',
-      marker:{size:group.markerSize, color}, line:{width:group.width, color, dash:group.dash},
+      x:xs, y:means, name:group.label, mode: group.showMarkers?'lines+markers':'lines', type:'scatter',
+      marker:{size:group.markerSize, color, line: L.markerEdge ? {width:0.8, color:th.panelBg} : {width:0}},
+      line:{width:group.width, color, dash:group.dash},
     });
     return out;
+  }
+
+  function buildMatrixFigure(f, p, th){
+    if (!p.matrices.length) return null;
+    const mat = currentMatrix(f,p), s = f.chartStyle, L = f.look;
+    const ff = th.fontFamily || L.fontFamily;
+    const xMin = parseFloat($('xMin').value), xMax = parseFloat($('xMax').value);
+    const logX = $('logX').checked, logY = $('logY').checked;
+    const traces = [];
+    const edge = L.markerEdge ? {width:0.8, color:th.panelBg} : {width:0};
+
+    const checkedList = [...f.selectedCols].sort((a,b)=>a-b);
+    p.sampleLabels.forEach((label, idx) => {
+      if (!f.selectedCols.has(idx)) return;
+      const {xs, ys} = extractSeries(mat, idx, xMin, xMax);
+      const orderIdx = checkedList.indexOf(idx);
+      const color = f.colorMode==='manual' ? f.seriesColor[idx] : computeSeriesColor(f, orderIdx, checkedList.length);
+      const width = f.seriesWidth[idx] ?? s.lineWidth;
+      const dash = f.seriesDash[idx] ?? s.lineDash;
+      const markersOn = f.seriesMarkers[idx]===null ? s.showMarkers : f.seriesMarkers[idx];
+      const size = f.seriesMarkerSize[idx] ?? s.markerSize;
+      const shape = f.seriesMarkerShape[idx] ?? (f.varyMarkerShape ? MARKER_SHAPES[orderIdx % MARKER_SHAPES.length].v : s.markerShape);
+      traces.push({
+        x:xs, y:ys, name: f.seriesLabel[idx] || label, mode: markersOn?'lines+markers':'lines', type:'scatter',
+        marker:{size, symbol:shape, color, line:edge}, line:{width, color, dash},
+      });
+    });
+
+    const visibleGroups = groups.filter(g=>g.visible);
+    visibleGroups.forEach((g,gi)=>{
+      const color = groupColorMode==='manual' ? null : effectiveGroupColor(gi, visibleGroups.length);
+      const t = buildGroupTrace(g, xMin, xMax, color, s, th, L);
+      if (t) traces.push(...t);
+    });
+
+    const lg = legendProps(s.legendPos, s, th, L, {marginT: s.title?36:10, marginB:44});
+    const layout = {
+      margin:{l:56, r:lg.marginR, t:lg.marginT, b:lg.marginB},
+      height:s.plotHeight, autosize:true,
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor: L.plotTint ? hexToRgba(th.fg,0.06) : 'rgba(0,0,0,0)',
+      font:{color:th.fg, family:ff, size:s.fontTick},
+      title: s.title ? {text:s.title, font:{family:ff, size:s.fontChartTitle, color:th.fg}, x:0, xanchor:'left'} : undefined,
+      xaxis: axisProps(L, th, {title:s.xLabel || 'Particle Diameter (nm)', titleSize:s.fontAxisTitle, tickSize:s.fontTick, showGrid:s.showGrid, type:logX?'log':'linear', num:s.numX}),
+      yaxis: axisProps(L, th, {title:s.yLabel || 'Particle concentration (#/cm³)', titleSize:s.fontAxisTitle, tickSize:s.fontTick, showGrid:s.showGrid, type:logY?'log':'linear', num:s.numY}),
+      showlegend: s.legendPos!=='hidden',
+      legend: lg.legend,
+    };
+    return {traces, layout};
   }
 
   function renderMatrixChart(f, p){
@@ -1720,73 +2395,11 @@
     if (weightField) caption += '  ·  weighting: '+weightField.value;
     $('matrixCaption').textContent = caption;
 
-    const xMin = parseFloat($('xMin').value), xMax = parseFloat($('xMax').value);
-    const logX = $('logX').checked, logY = $('logY').checked;
-    const traces = [];
-
-    const checkedList = [...f.selectedCols].sort((a,b)=>a-b);
-    p.sampleLabels.forEach((label, idx) => {
-      if (!f.selectedCols.has(idx)) return;
-      const {xs, ys} = extractSeries(mat, idx, xMin, xMax);
-      const orderIdx = checkedList.indexOf(idx);
-      const color = f.colorMode==='manual'
-        ? f.seriesColor[idx]
-        : computeSeriesColor(f, orderIdx, checkedList.length);
-      const width = f.seriesWidth[idx] ?? s.lineWidth;
-      const dash = f.seriesDash[idx] ?? s.lineDash;
-      const markersOn = f.seriesMarkers[idx]===null ? s.showMarkers : f.seriesMarkers[idx];
-      const size = f.seriesMarkerSize[idx] ?? s.markerSize;
-      const shape = f.seriesMarkerShape[idx] ?? (f.varyMarkerShape ? MARKER_SHAPES[orderIdx % MARKER_SHAPES.length].v : s.markerShape);
-      traces.push({
-        x:xs, y:ys, name: f.seriesLabel[idx] || label, mode: markersOn?'lines+markers':'lines', type:'scatter',
-        marker:{size, symbol:shape, color}, line:{width, color, dash},
-      });
-    });
-
-    const visibleGroups = groups.filter(g=>g.visible);
-    visibleGroups.forEach((g,gi)=>{
-      const color = groupColorMode==='manual' ? null : effectiveGroupColor(gi, visibleGroups.length);
-      const t = buildGroupTrace(g, xMin, xMax, color);
-      if (t) traces.push(...t);
-    });
-
-    const fg = themeColor('--fg'), border = themeColor('--border'), panelBg = themeColor('--panel');
-    const bgColor = s.exportBg==='white' ? '#FFFFFF' : s.exportBg==='panel' ? panelBg : 'rgba(0,0,0,0)';
-
-    const legendBase = {font:{size:s.fontLegend, color:fg}};
-    if (s.legendBorder){ legendBase.bordercolor = border; legendBase.borderwidth = 1; }
-    legendBase.bgcolor = hexToRgba(panelBg, s.legendAlpha);
-
-    let legendConfig, marginR=16, marginT = s.title?36:10, marginB=44;
-    if (s.legendPos==='right'){
-      legendConfig = {...legendBase, orientation:'v', x:1.02, y:1, xanchor:'left'};
-      marginR = 132;
-    } else if (s.legendPos==='top'){
-      legendConfig = {...legendBase, orientation:'h', y:1.16, x:0};
-      marginT = (s.title?36:10) + 34;
-    } else if (s.legendPos==='inside'){
-      legendConfig = {...legendBase, orientation:'v', x:0.98, y:0.98, xanchor:'right', yanchor:'top'};
-    } else {
-      legendConfig = {...legendBase, orientation:'h', y:-0.24, x:0};
-      marginB = 72;
-    }
-
-    const layout = {
-      margin:{l:56, r:marginR, t:marginT, b:marginB},
-      height: s.plotHeight,
-      width: s.plotWidth || undefined,
-      autosize: !s.plotWidth,
-      paper_bgcolor:bgColor, plot_bgcolor:'rgba(0,0,0,0)',
-      font:{color:fg, family:'IBM Plex Mono, monospace', size:s.fontTick},
-      title: s.title ? {text:s.title, font:{family:'Space Grotesk, sans-serif', size:s.fontChartTitle, color:fg}, x:0, xanchor:'left'} : undefined,
-      xaxis:{title:{text: s.xLabel || 'Particle Diameter (nm)', font:{size:s.fontAxisTitle}}, type: logX?'log':'linear', showgrid:s.showGrid, gridcolor:border, zerolinecolor:border, color:fg, tickfont:{size:s.fontTick}, showline:true, linecolor:fg, linewidth:1, mirror:true, ticks:'inside', tickcolor:fg, automargin:true},
-      yaxis:{title:{text: s.yLabel || 'Particle concentration (#/cm³)', font:{size:s.fontAxisTitle}}, type: logY?'log':'linear', showgrid:s.showGrid, gridcolor:border, zerolinecolor:border, color:fg, tickfont:{size:s.fontTick}, showline:true, linecolor:fg, linewidth:1, mirror:true, ticks:'inside', tickcolor:fg, automargin:true},
-      showlegend: s.legendPos!=='hidden',
-      legend: legendConfig,
-    };
-    $('matrixChart').style.height = s.plotHeight+'px';
-    $('matrixChart').style.width = s.plotWidth ? s.plotWidth+'px' : '100%';
-    Plotly.react('matrixChart', traces, layout, plotConfig('distribution-chart', s));
+    const fig = buildMatrixFigure(f, p, pageTheme());
+    const el = $('matrixChart');
+    el.style.height = s.plotHeight+'px';
+    el.style.width = s.plotWidth ? s.plotWidth+'px' : '100%';
+    Plotly.react(el, fig.traces, fig.layout, plotConfig('matrix', s)).then(()=>Plotly.Plots.resize(el));
   }
 
   function renderPerSampleTable(f, p){
@@ -1861,17 +2474,17 @@
     const wantKey = normalizeFieldKey(fieldKey);
     const visibleGroups = groups.filter(g=>g.visible);
     if (visibleGroups.length>0){
-      const xs=[], ys=[], errs=[];
-      visibleGroups.forEach(g=>{
+      const xs=[], ys=[], errPlus=[], errMinus=[], items=[];
+      visibleGroups.forEach((g,gi)=>{
         const gf = files[g.file];
         const gField = gf && gf.parsed ? gf.parsed.perSampleFields.find(fl=>normalizeFieldKey(fl.key)===wantKey) : null;
-        xs.push(g.label);
-        if (!gField){ ys.push(null); errs.push(0); return; }
+        xs.push(g.label); items.push({kind:'group', g, gi});
+        if (!gField){ ys.push(null); errPlus.push(0); errMinus.push(0); return; }
         const vals = g.cols.map(c=>{ const v=gField.values[c]; return v.trim()===''?null:parseFloat(v); }).filter(v=>v!==null && isFinite(v));
-        ys.push(vals.length ? mean(vals) : null);
-        errs.push(statErrorType==='sd' ? stdDev(vals) : statErrorType==='se' ? stdErr(vals) : 0);
+        const e = errPair(vals, statErrorType);
+        ys.push(e.m); errPlus.push(e.plus); errMinus.push(e.minus);
       });
-      return {xs, ys, errs};
+      return {xs, ys, errPlus, errMinus, items};
     }
     const startTime = p.perSampleFields.find(fl=>/start time/i.test(fl.key));
     const dateField = p.perSampleFields.find(fl=>/^date$/i.test(fl.key));
@@ -1883,19 +2496,185 @@
     return {
       xs: idxs.map(labelFor),
       ys: fld ? idxs.map(i=>{ const v=fld.values[i]; return v.trim()===''?null:parseFloat(v); }) : idxs.map(()=>null),
-      errs: idxs.map(()=>0),
+      errPlus: idxs.map(()=>0), errMinus: idxs.map(()=>0),
+      items: idxs.map((idx,order)=>({kind:'sample', idx, order})),
     };
+  }
+
+  // The color a bar would have if it simply matched its line on the distribution chart
+  // (manual color or colormap), a user-chosen custom color, or the single bar color.
+  function barItemColor(f, it, n, bs){
+    if (bs.barColorMode==='single') return bs.color;
+    const line = it.kind==='group'
+      ? (groupColorMode==='manual' ? it.g.color : effectiveGroupColor(it.gi, n))
+      : (f.colorMode==='manual' ? f.seriesColor[it.idx] : computeSeriesColor(f, it.order, n));
+    if (bs.barColorMode==='custom'){
+      const c = it.kind==='group' ? it.g.barColor : (f.seriesBarColor && f.seriesBarColor[it.idx]);
+      return c || line;
+    }
+    return line;
+  }
+
+  function renderBarColorList(f, p){
+    const bs = f.barStyle;
+    const wrap = $('barColorListWrap'), list = $('barColorList');
+    $('barColorField').style.display = bs.barColorMode==='single' ? 'block' : 'none';
+    wrap.style.display = bs.barColorMode==='custom' ? 'block' : 'none';
+    if (bs.barColorMode!=='custom') return;
+    const numericFields = p.perSampleFields.filter(fieldIsNumeric);
+    if (!numericFields.length) return;
+    const field = numericFields.find(nf=>nf.key===$('statField').value) || numericFields[0];
+    const series = getStatSeries(f, p, field.key), n = series.items.length;
+    list.innerHTML = '';
+    series.items.forEach((it,i)=>{
+      const row = document.createElement('div'); row.className = 'sample-row';
+      const sw = document.createElement('input'); sw.type = 'color'; sw.value = barItemColor(f, it, n, bs);
+      sw.addEventListener('input', ()=>{
+        if (it.kind==='group') it.g.barColor = sw.value;
+        else { if (!f.seriesBarColor) f.seriesBarColor = new Array(p.N).fill(null); f.seriesBarColor[it.idx] = sw.value; }
+        renderStatChart(f,p);
+      });
+      const lab = document.createElement('span'); lab.className = 'mono';
+      lab.style.cssText = 'font-size:11.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      lab.textContent = series.xs[i];
+      row.appendChild(sw); row.appendChild(lab); list.appendChild(row);
+    });
+  }
+
+  // ---------- group summary table ----------
+  const gsState = {
+    field:'', num:{mode:'auto', decimals:3},
+    cols:{n:true, mean:true, sd:true, cv:true, se:false, ci95:false, min:false, max:false, median:false},
+  };
+  const GS_COLS = [['n','n'], ['mean','Mean'], ['sd','SD'], ['cv','CV (RSD, %)'], ['se','SE'], ['ci95','95% CI ±'], ['min','Min'], ['max','Max'], ['median','Median']];
+
+  function summaryStats(vals){
+    const n = vals.length;
+    if (!n) return null;
+    const m = mean(vals), sd = n>1 ? stdDev(vals) : null;
+    const sorted = vals.slice().sort((a,b)=>a-b);
+    return {
+      n, mean:m, sd,
+      cv: (sd!==null && m!==0) ? sd/Math.abs(m)*100 : null,
+      se: sd!==null ? sd/Math.sqrt(n) : null,
+      ci95: sd!==null ? tCrit95(n-1)*sd/Math.sqrt(n) : null,
+      min:sorted[0], max:sorted[n-1],
+      median: n%2 ? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2,
+    };
+  }
+
+  // One row per visible group; with no groups, the checked scans of the active file act as one.
+  function groupStatRows(f, fieldKey){
+    const want = normalizeFieldKey(fieldKey);
+    const valsFor = (fileObj, cols)=>{
+      const fld = fileObj && fileObj.parsed ? fileObj.parsed.perSampleFields.find(fl=>normalizeFieldKey(fl.key)===want) : null;
+      if (!fld) return null;
+      return cols.map(c=>{ const v=fld.values[c]; return v.trim()===''?null:parseFloat(v); }).filter(v=>v!==null && isFinite(v));
+    };
+    const rows = [];
+    const vis = groups.filter(g=>g.visible);
+    if (vis.length){
+      vis.forEach(g=>{ const vals = valsFor(files[g.file], g.cols); rows.push({label:g.label, file:g.file, stats: vals ? summaryStats(vals) : null}); });
+    } else if (f.selectedCols && f.selectedCols.size){
+      const vals = valsFor(f, [...f.selectedCols].sort((a,b)=>a-b));
+      rows.push({label:'Checked scans', file:activeFile, stats: vals ? summaryStats(vals) : null});
+    }
+    return rows;
+  }
+
+  function gsModel(f){
+    const field = gsState.field;
+    const unit = (field.match(/\(([^)]+)\)\s*$/) || [])[1];
+    const rows = groupStatRows(f, field);
+    const multiFile = new Set(rows.map(r=>r.file)).size > 1;
+    const cols = GS_COLS.filter(([k])=>gsState.cols[k]);
+    const head = (k, label)=> (['mean','sd','se','ci95','min','max','median'].includes(k) && unit) ? label+' ('+unit+')' : label;
+    return {field, rows, multiFile, cols, head};
+  }
+
+  function renderGroupStatsControls(f, p){
+    const numericFields = p.perSampleFields.filter(fieldIsNumeric);
+    const sel = $('gsField');
+    sel.innerHTML = numericFields.map(fl=>'<option value="'+escapeHtml(fl.key)+'">'+escapeHtml(fl.key)+'</option>').join('');
+    if (!numericFields.some(fl=>fl.key===gsState.field)){
+      const d = numericFields.find(fl=>/concentration/i.test(fl.key)) || numericFields[0];
+      gsState.field = d ? d.key : '';
+    }
+    sel.value = gsState.field;
+    sel.onchange = ()=>{ gsState.field = sel.value; renderGroupStats(f,p); };
+    const again = ()=> renderGroupStats(f,p);
+    bindNumFormat('gsNumMode', 'gsDecimals', gsState.num, false, again);
+    GS_COLS.forEach(([k])=> bindField($('gsCol_'+k), gsState.cols, k, 'check', again));
+
+    const note = msg=>{ $('gsNote').textContent = msg; setTimeout(()=>{ $('gsNote').textContent = ''; }, 2500); };
+    $('gsCopy').onclick = async ()=>{
+      const {header, rows} = gsExportData(f);
+      const tsv = [header, ...rows].map(r=>r.join('\t')).join('\n');
+      try { await navigator.clipboard.writeText(tsv); note('Copied — paste into Excel or Sheets.'); }
+      catch (e){
+        const ta = document.createElement('textarea'); ta.value = tsv; ta.style.cssText = 'position:fixed;left:-9999px;';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); note('Copied — paste into Excel or Sheets.'); } catch (e2){ note('Copy was blocked — use Download CSV.'); }
+        ta.remove();
+      }
+    };
+    $('gsCsv').onclick = ()=>{
+      const {header, rows} = gsExportData(f);
+      const q = v=>{ const s = String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+      const csv = [header, ...rows].map(r=>r.map(q).join(',')).join('\n')+'\n';
+      downloadBlob(new Blob([csv], {type:'text/csv'}), 'group-summary.csv');
+    };
+  }
+
+  // Full-precision values (not the display format) so copied numbers stay usable.
+  function gsExportData(f){
+    const m = gsModel(f);
+    const header = ['Group'].concat(m.multiFile ? ['File'] : [], m.cols.map(([k,l])=>m.head(k,l)));
+    const raw = v=> (v===null || v===undefined) ? '' : Number(Number(v).toPrecision(10));
+    const rows = m.rows.map(r=> [r.label].concat(m.multiFile ? [r.file] : [], m.cols.map(([k])=> r.stats ? raw(r.stats[k]) : '')));
+    return {header, rows};
+  }
+
+  function renderGroupStats(f, p){
+    const section = $('groupStatsSection');
+    if (!gsState.field){ section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    const m = gsModel(f);
+    const fmt = (k, v)=>{
+      if (v===null || v===undefined || !isFinite(v)) return '–';
+      if (k==='n') return String(v);
+      if (k==='cv') return v.toFixed(2);
+      return formatNumber(v, gsState.num);
+    };
+    const table = $('groupStatsTable');
+    table.innerHTML = '';
+    const thead = document.createElement('thead'), trh = document.createElement('tr');
+    const addTh = (txt, cls, title)=>{ const th = document.createElement('th'); th.textContent = txt; th.className = cls; if (title) th.title = title; trh.appendChild(th); };
+    addTh('Group', 'lbl'); if (m.multiFile) addTh('File', 'lbl');
+    m.cols.forEach(([k,l])=> addTh(m.head(k,l), 'num', k==='cv' ? 'Coefficient of variation = relative standard deviation = SD ÷ mean × 100' : ''));
+    thead.appendChild(trh); table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    m.rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      const addTd = (txt, cls)=>{ const td = document.createElement('td'); td.textContent = txt; td.className = cls; tr.appendChild(td); };
+      addTd(r.label, 'lbl'); if (m.multiFile) addTd(r.file, 'lbl');
+      m.cols.forEach(([k])=> addTd(r.stats ? fmt(k, r.stats[k]) : (k==='n' ? '0' : '–'), 'num mono'));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    $('groupStatsCaption').textContent = m.field + '  ·  ' + (groups.some(g=>g.visible)
+      ? m.rows.length+' group'+(m.rows.length===1?'':'s')
+      : 'no groups yet — showing the checked scans as one set');
   }
 
   function renderStatControls(f, p){
     const panel = $('statChartPanel');
     const barPanel = $('barSettingsPanel');
     const numericFields = p.perSampleFields.filter(fieldIsNumeric);
-    if (!numericFields.length){ panel.style.display='none'; barPanel.style.display='none'; return; }
+    if (!numericFields.length){ panel.style.display='none'; barPanel.style.display='none'; $('groupStatsSection').style.display='none'; return; }
     panel.style.display='block';
     barPanel.style.display='block';
     const bs = f.barStyle;
-    const visibleGroupCount = groups.filter(g=>g.visible).length;
 
     const select = $('statField');
     const prevValue = select.value;
@@ -1908,6 +2687,8 @@
     // same data twice on two mismatched axes, which reads as noise.
     select.onchange = ()=>{ renderStatControls(f,p); renderStatChart(f,p); };
     $('statType').onchange = ()=> renderStatChart(f,p);
+
+    renderGroupStatsControls(f, p);
 
     $('statLabels').checked = !!f.statShowLabels;
     $('statLabels').onchange = e=>{ f.statShowLabels = e.target.checked; renderStatChart(f,p); };
@@ -1950,104 +2731,124 @@
     $('statOverlayMax').value = bs.overlayMax;
     $('statOverlayMax').oninput = e=>{ bs.overlayMax = e.target.value; renderStatChart(f,p); };
 
-    // ---- style ----
+    // ---- bar colors ----
+    $('barColorMode').value = bs.barColorMode;
+    $('barColorMode').onchange = e=>{ bs.barColorMode = e.target.value; renderBarColorList(f,p); renderStatChart(f,p); };
     $('barColor').value = bs.color;
-    $('barUseGroupColorField').style.display = visibleGroupCount>0 ? 'flex' : 'none';
-    $('barUseGroupColor').checked = bs.useGroupColor;
-    $('barUseGroupColor').onchange = e=>{ bs.useGroupColor = e.target.checked; renderStatChart(f,p); };
-    $('barColor').oninput = e=>{ bs.color=e.target.value; renderStatChart(f,p); };
-    $('barWidth').value = bs.width;
-    $('barWidth').oninput = e=>{ bs.width = e.target.value===''?'':(parseInt(e.target.value,10)||''); renderStatChart(f,p); };
-    $('barHeight').value = bs.height;
-    $('barHeight').oninput = e=>{ bs.height = parseInt(e.target.value,10)||300; renderStatChart(f,p); };
-    $('barGap').value = bs.barGap;
-    $('barGap').oninput = e=>{ bs.barGap = parseFloat(e.target.value); if(!isFinite(bs.barGap)) bs.barGap=0.15; renderStatChart(f,p); };
-    $('barTickAngle').value = bs.tickAngle;
-    $('barTickAngle').oninput = e=>{ bs.tickAngle = parseInt(e.target.value,10); if(!isFinite(bs.tickAngle)) bs.tickAngle=-30; renderStatChart(f,p); };
-    $('barShowGrid').checked = bs.showGrid;
-    $('barShowGrid').onchange = e=>{ bs.showGrid = e.target.checked; renderStatChart(f,p); };
+    $('barColor').oninput = e=>{ bs.color = e.target.value; renderStatChart(f,p); };
+    $('barColorReset').onclick = ()=>{
+      groups.forEach(g=>{ g.barColor = null; });
+      if (f.seriesBarColor) f.seriesBarColor.fill(null);
+      renderBarColorList(f,p); renderStatChart(f,p);
+    };
+    renderBarColorList(f,p);
 
-    // ---- fonts ----
-    $('barFontTick').value = bs.fontTick;
-    $('barFontTick').oninput = e=>{ bs.fontTick = parseInt(e.target.value,10)||11; renderStatChart(f,p); };
-    $('barFontAxisTitle').value = bs.fontAxisTitle;
-    $('barFontAxisTitle').oninput = e=>{ bs.fontAxisTitle = parseInt(e.target.value,10)||12; renderStatChart(f,p); };
-    $('barFontLegend').value = bs.fontLegend;
-    $('barFontLegend').oninput = e=>{ bs.fontLegend = parseInt(e.target.value,10)||10; renderStatChart(f,p); };
+    // ---- bars, error bars, size (these belong to this chart's own look) ----
+    const Lb = f.barLook;
+    const redraw = ()=> renderStatChart(f,p);
+    const onLook = ()=>{ Lb.preset = 'custom'; $('brPreset').value = 'custom'; redraw(); };
+    const refreshFill = ()=>{
+      const shaped = !!(BAR_FILLS[bs.fillStyle] || BAR_FILLS.solid).shape;
+      $('barPatternRow').style.display = shaped ? 'flex' : 'none';
+      $('barPatBgField').style.display = shaped ? 'block' : 'none';
+    };
+    bindField($('barTitle'),  bs,'title','text', redraw);
+    bindField($('barXLabel'), bs,'xLabel','text', redraw);
+    bindField($('barYLabel'), bs,'yLabel','text', redraw);
+    bindField($('barWidthPct'), bs,'barWidthPct','int', redraw, {min:5, max:100, allowEmpty:true});
+    bindField($('barFillStyle'), bs,'fillStyle','text', ()=>{ refreshFill(); redraw(); });
+    bindField($('barPatSize'), bs,'patSize','int', redraw, {min:2, max:30});
+    bindField($('barPatSolidity'), bs,'patSolidity','num', redraw, {min:0.1, max:0.9});
+    bindField($('barPatBg'), bs,'patBg','text', redraw);
+    refreshFill();
+    bindField($('brOutlineWidth'), Lb,'barOutlineWidth','num', onLook, {min:0.25, max:6});
+    bindField($('brOutlineColor'), Lb,'barOutlineColor','text', onLook);
+    bindNumFormat('brNumYMode', 'brNumYDec', bs.numY, true, redraw);
+    bindNumFormat('brNumLabelMode', 'brNumLabelDec', bs.numLabel, false, redraw);
+    bindField($('brBarOpacity'), Lb,'barOpacity','num', onLook, {min:0.2, max:1});
+    bindField($('brBarOutline'), Lb,'barOutline','check', onLook);
+    bindField($('brErrColor'),   Lb,'errColor','text', onLook);
+    bindField($('brErrThick'),   Lb,'errThickness','num', onLook, {min:0.5, max:5});
+    bindField($('brErrCap'),     Lb,'errCap','num', onLook, {min:0, max:14});
+    bindField($('brMarkerEdge'), Lb,'markerEdge','check', onLook);
+    bindField($('barWidth'),     bs,'width','int', ()=>{ redraw(); if (refreshExportInfo.bx) refreshExportInfo.bx(); }, {min:200, max:2400, allowEmpty:true});
+    bindField($('barHeight'),    bs,'height','int', ()=>{ redraw(); if (refreshExportInfo.bx) refreshExportInfo.bx(); }, {min:150, max:1600});
+    bindField($('barTickAngle'), bs,'tickAngle','int', redraw, {min:-90, max:0});
 
-    // ---- legend ----
-    $('barLegendPos').value = bs.legendPos;
-    $('barLegendPos').onchange = e=>{ bs.legendPos = e.target.value; renderStatChart(f,p); };
-    $('barLegendAlpha').value = bs.legendAlpha;
-    $('barLegendAlpha').oninput = e=>{ bs.legendAlpha = parseFloat(e.target.value); if(!isFinite(bs.legendAlpha)) bs.legendAlpha=0.82; renderStatChart(f,p); };
-    $('barLegendBorder').checked = bs.legendBorder;
-    $('barLegendBorder').onchange = e=>{ bs.legendBorder = e.target.checked; renderStatChart(f,p); };
+    wireLookSections('br', 'bar', f, p);
+    wireExportControls('bx', bs, 'stat');
 
-    // ---- export ----
-    $('barExportFormat').value = bs.exportFormat;
-    $('barExportFormat').onchange = e=>{ bs.exportFormat = e.target.value; renderStatChart(f,p); };
-    $('barExportScale').value = bs.exportScale;
-    $('barExportScale').oninput = e=>{ bs.exportScale = parseInt(e.target.value,10)||3; renderStatChart(f,p); };
-    $('barExportBg').value = bs.exportBg;
-    $('barExportBg').onchange = e=>{ bs.exportBg = e.target.value; renderStatChart(f,p); };
+    $('resetBarBtn').onclick = ()=>{
+      f.barStyle = Object.assign(defaultBarStyle(), {export:bs.export});
+      f.barLook = defaultLook();
+      renderStatControls(f,p); renderStatChart(f,p);
+    };
   }
 
-  function renderStatChart(f, p){
+  function buildStatFigure(f, p, th){
     const numericFields = p.perSampleFields.filter(fieldIsNumeric);
-    if (!numericFields.length) return;
-    const select = $('statField');
-    const field = numericFields.find(nf=>nf.key===select.value) || numericFields[0];
-    const bs = f.barStyle;
-    const type = $('statType').value;
-    const fg = themeColor('--fg'), muted = themeColor('--muted'), border = themeColor('--border'), panelBg = themeColor('--panel');
-    const bgColor = bs.exportBg==='white' ? '#FFFFFF' : bs.exportBg==='panel' ? panelBg : 'rgba(0,0,0,0)';
+    if (!numericFields.length) return null;
+    const field = numericFields.find(nf=>nf.key===$('statField').value) || numericFields[0];
+    const bs = f.barStyle, L = f.barLook, type = $('statType').value;
+    const ff = th.fontFamily || L.fontFamily;
 
     const primary = getStatSeries(f, p, field.key);
-    const visibleGroups = groups.filter(g=>g.visible);
-    const hasErr = visibleGroups.length>0 && statErrorType!=='none';
+    const n = primary.items.length;
+    const hasErr = groups.some(g=>g.visible) && statErrorType!=='none';
     const showLabels = !!f.statShowLabels;
 
-    const barColors = (bs.useGroupColor && visibleGroups.length>0) ? visibleGroups.map(g=>g.color) : bs.color;
-    const text = showLabels ? primary.ys.map(v=> v===null?'':String(Number(v.toPrecision(4)))) : undefined;
+    const uniform = bs.barColorMode==='single';
+    const colors = primary.items.map(it=>barItemColor(f, it, n, bs));
+    const baseColors = uniform ? bs.color : colors;
+    const marker = barMarker(baseColors, bs, L, th);
+    const solidFill = bs.fillStyle==='solid';
+    const errColor = L.errColor==='gray' ? th.muted : L.errColor==='match' ? (uniform ? darken(bs.color,0.5) : th.fg) : th.fg;
+    const errorY = hasErr ? {type:'data', symmetric:false, array:primary.errPlus, arrayminus:primary.errMinus,
+      visible:true, color:errColor, thickness:L.errThickness, width:L.errCap} : undefined;
 
-    let resolvedPos = bs.labelPos==='auto' ? (hasErr ? 'inside' : 'outside') : bs.labelPos;
-    let traceText, traceTextPos, insideAnchor;
+    const text = showLabels ? primary.ys.map(v=> v===null?'':formatNumber(v, bs.numLabel)) : undefined;
+    // Auto: inside the bar only for solid fills with error bars; text over hatching is hard to read.
+    const resolvedPos = bs.labelPos==='auto' ? ((hasErr && solidFill) ? 'inside' : 'outside') : bs.labelPos;
+    let traceText, traceTextPos, insideAnchor, insideFont;
     const annotations = [];
     if (type==='bar' && showLabels && resolvedPos==='inside'){
       traceText = text; traceTextPos = 'inside'; insideAnchor = 'middle';
+      // text on a solid fill contrasts with that fill; on patterns/hollow bars use ink
+      insideFont = {family:ff, size:bs.fontTick, color: solidFill ? (uniform ? contrastText(bs.color) : colors.map(contrastText)) : th.fg};
     } else if (type==='bar' && showLabels && resolvedPos==='outside'){
       traceTextPos = 'none';
       primary.xs.forEach((x,i)=>{
         const y = primary.ys[i];
         if (y===null || y===undefined) return;
-        const err = hasErr ? (primary.errs[i]||0) : 0;
-        annotations.push({x, y:y+err, yshift:bs.labelPad, text:text[i], showarrow:false, xref:'x', yref:'y',
-          font:{size:bs.fontTick, color:fg}, xanchor:'center', yanchor:'bottom'});
+        const up = hasErr ? (primary.errPlus[i]||0) : 0;
+        annotations.push({x, y:y+up, yshift:bs.labelPad, text:text[i], showarrow:false, xref:'x', yref:'y',
+          font:{size:bs.fontTick, color:th.fg, family:ff}, xanchor:'center', yanchor:'bottom'});
       });
     }
 
     const trace = type==='bar'
-      ? {x:primary.xs, y:primary.ys, type:'bar', name:field.key, marker:{color:barColors},
-         error_y: hasErr ? {type:'data', array:primary.errs, visible:true, color:muted} : undefined,
-         text:traceText, textposition:traceTextPos, insidetextanchor:insideAnchor, textfont: traceTextPos==='inside'?{color:'#fff'}:undefined}
-      : {x:primary.xs, y:primary.ys, type:'scatter', mode:'lines+markers', name:field.key, line:{color:bs.color, width:1.8}, marker:{size:7, color:bs.color},
-         error_y: hasErr ? {type:'data', array:primary.errs, visible:true, color:muted} : undefined,
-         text, textposition:'top center'};
+      ? {x:primary.xs, y:primary.ys, type:'bar', name:field.key, marker,
+         error_y:errorY, text:traceText, textposition:traceTextPos, insidetextanchor:insideAnchor, textfont:insideFont}
+      : {x:primary.xs, y:primary.ys, type:'scatter', mode:'lines+markers', name:field.key,
+         line:{color: uniform ? bs.color : th.fg, width:1.8}, marker:{size:7, color:baseColors, line: L.markerEdge ? {width:0.8, color:th.panelBg} : {width:0}},
+         error_y:errorY, text, textposition:'top center', textfont:{family:ff, size:bs.fontTick, color:th.fg}};
 
     const chartTraces = [trace];
     let yaxis2, barmode;
     if (bs.overlayField){
       const overlay = getStatSeries(f, p, bs.overlayField);
       if (bs.overlayType==='bar'){
-        chartTraces.push({x:overlay.xs, y:overlay.ys, type:'bar', name:bs.overlayField, marker:{color:bs.overlayColor}});
+        chartTraces.push({x:overlay.xs, y:overlay.ys, type:'bar', name:bs.overlayField, marker:barMarker(bs.overlayColor, bs, L, th)});
         barmode = 'group';
       } else {
         chartTraces.push({
           x:overlay.xs, y:overlay.ys, type:'scatter', mode: bs.overlayMarkers?'lines+markers':'lines', name:bs.overlayField, yaxis:'y2',
-          line:{color:bs.overlayColor, width:bs.overlayWidth, dash:bs.overlayDash}, marker:{size:6, color:bs.overlayColor},
+          line:{color:bs.overlayColor, width:bs.overlayWidth, dash:bs.overlayDash},
+          marker:{size:6, color:bs.overlayColor, line: L.markerEdge ? {width:0.8, color:th.panelBg} : {width:0}},
         });
-        yaxis2 = {title:{text:bs.overlayField, font:{size:bs.fontAxisTitle}}, overlaying:'y', side:'right', color:fg, showgrid:false, zeroline:false,
-          tickfont:{size:bs.fontTick}, showline:true, linecolor:fg, linewidth:1, mirror:false, ticks:'inside', tickcolor:fg, automargin:true};
+        yaxis2 = Object.assign(
+          axisProps(L, th, {title:bs.overlayField, titleSize:bs.fontAxisTitle, tickSize:bs.fontTick, showGrid:false, num:bs.numY}),
+          {overlaying:'y', side:'right', mirror:false});
         // A narrow auto-range on a secondary axis makes ordinary fluctuations look
         // dramatic; default to starting at zero unless the user sets explicit bounds.
         const lo = bs.overlayMin!=='' ? parseFloat(bs.overlayMin) : null;
@@ -2062,24 +2863,17 @@
       }
     }
 
-    const legendBase = {font:{size:bs.fontLegend, color:fg}};
-    if (bs.legendBorder){ legendBase.bordercolor = border; legendBase.borderwidth = 1; }
-    legendBase.bgcolor = hexToRgba(panelBg, bs.legendAlpha);
-    const effectiveLegendPos = bs.legendPos==='auto' ? (bs.overlayField ? 'bottom' : 'hidden') : bs.legendPos;
-    let legendConfig, marginR = bs.overlayField && bs.overlayType==='line' ? 70 : 16, marginB = 60;
-    if (effectiveLegendPos==='right'){ legendConfig = {...legendBase, orientation:'v', x:1.02, y:1, xanchor:'left'}; marginR = Math.max(marginR,132); }
-    else if (effectiveLegendPos==='top'){ legendConfig = {...legendBase, orientation:'h', y:1.18, x:0}; }
-    else if (effectiveLegendPos==='inside'){ legendConfig = {...legendBase, orientation:'v', x:0.98, y:0.98, xanchor:'right', yanchor:'top'}; }
-    else { legendConfig = {...legendBase, orientation:'h', y:-0.32, x:0}; marginB = 86; }
+    const effLegend = bs.legendPos==='auto' ? (bs.overlayField ? 'bottom' : 'hidden') : bs.legendPos;
+    const lg = legendProps(effLegend, bs, th, L, {marginR:(bs.overlayField && bs.overlayType==='line') ? 70 : 16,
+      marginT: bs.title ? 40 : (showLabels?18:10), marginB:60, bottomY:-0.32, bottomMargin:86});
 
-    // Outside labels are annotations, which Plotly's auto-range ignores — so the tallest
-    // bar's label would sit right on (or past) the top border. Give the y-axis explicit
+    // Outside labels are annotations, which Plotly's auto-range ignores, so the tallest
+    // bar's label would sit on (or past) the top border. Give the y-axis explicit
     // headroom proportional to the label's pixel height + padding in that case.
     let yRange;
-    const outsideLabels = annotations.length>0;
-    if (outsideLabels){
-      const tops = primary.ys.map((y,i)=> y===null?null : y + (hasErr?(primary.errs[i]||0):0)).filter(v=>v!==null && isFinite(v));
-      const lows = primary.ys.map((y,i)=> y===null?null : y - (hasErr?(primary.errs[i]||0):0)).filter(v=>v!==null && isFinite(v));
+    if (annotations.length>0){
+      const tops = primary.ys.map((y,i)=> y===null?null : y + (hasErr?(primary.errPlus[i]||0):0)).filter(v=>v!==null && isFinite(v));
+      const lows = primary.ys.map((y,i)=> y===null?null : y - (hasErr?(primary.errMinus[i]||0):0)).filter(v=>v!==null && isFinite(v));
       if (bs.overlayField && bs.overlayType==='bar'){
         getStatSeries(f, p, bs.overlayField).ys.forEach(v=>{ if(v!==null && isFinite(v)) tops.push(v); });
       }
@@ -2092,26 +2886,35 @@
       }
     }
 
+    // Bar width is stored as a share of each bar's slot; Plotly wants the gap instead.
+    const gap = (bs.barWidthPct==='' || bs.barWidthPct===null) ? 0.15 : Math.max(0, Math.min(0.95, 1 - bs.barWidthPct/100));
     const layout = {
-      margin:{l:56, r:marginR, t: showLabels?18:10, b:marginB},
-      height: bs.height,
-      width: bs.width || undefined,
-      autosize: !bs.width,
-      bargap: bs.barGap,
-      barmode,
-      paper_bgcolor:bgColor, plot_bgcolor:'rgba(0,0,0,0)',
-      font:{color:fg, family:'IBM Plex Mono, monospace', size:bs.fontTick},
-      xaxis:{title:{text:''}, showgrid:bs.showGrid, gridcolor:border, color:fg, tickfont:{size:bs.fontTick}, tickangle:bs.tickAngle, showline:true, linecolor:fg, linewidth:1, mirror:true, ticks:'inside', tickcolor:fg, automargin:true},
-      yaxis:{title:{text:field.key, font:{size:bs.fontAxisTitle}}, showgrid:bs.showGrid, gridcolor:border, zerolinecolor:border, color:fg, tickfont:{size:bs.fontTick}, showline:true, linecolor:fg, linewidth:1, mirror:true, ticks:'inside', tickcolor:fg, automargin:true},
-      showlegend: effectiveLegendPos!=='hidden',
-      legend: legendConfig,
+      margin:{l:56, r:lg.marginR, t:lg.marginT, b:lg.marginB},
+      height:bs.height, autosize:true,
+      bargap:gap, barmode,
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor: L.plotTint ? hexToRgba(th.fg,0.06) : 'rgba(0,0,0,0)',
+      font:{color:th.fg, family:ff, size:bs.fontTick},
+      title: bs.title ? {text:bs.title, font:{family:ff, size:bs.fontChartTitle, color:th.fg}, x:0, xanchor:'left'} : undefined,
+      xaxis: axisProps(L, th, {title:bs.xLabel, titleSize:bs.fontAxisTitle, tickSize:bs.fontTick, showGrid:false, category:true, type:'category', tickangle:bs.tickAngle}),
+      yaxis: axisProps(L, th, {title:bs.yLabel || field.key, titleSize:bs.fontAxisTitle, tickSize:bs.fontTick, showGrid:bs.showGrid, num:bs.numY}),
+      showlegend: effLegend!=='hidden',
+      legend: lg.legend,
       annotations,
     };
     if (yaxis2) layout.yaxis2 = yaxis2;
     if (yRange) layout.yaxis.range = yRange;
-    $('statChart').style.height = bs.height+'px';
-    $('statChart').style.width = bs.width ? bs.width+'px' : '100%';
-    Plotly.react('statChart', chartTraces, layout, plotConfig('bar-chart', bs));
+    return {traces:chartTraces, layout};
+  }
+
+  function renderStatChart(f, p){
+    const fig = buildStatFigure(f, p, pageTheme());
+    if (!fig) return;
+    const bs = f.barStyle;
+    const el = $('statChart');
+    el.style.height = bs.height+'px';
+    el.style.width = bs.width ? bs.width+'px' : '100%';
+    Plotly.react(el, fig.traces, fig.layout, plotConfig('stat', bs)).then(()=>Plotly.Plots.resize(el));
+    renderGroupStats(f, p);
   }
 
   function renderOther(p){
@@ -2285,6 +3088,33 @@
       if (el && el.data) Plotly.Plots.resize(el);
     });
   });
+
+
+  // ---------- one-time UI setup ----------
+  function mountSections(){
+    $('dsAxes').innerHTML = axesSectionHtml('ds');
+    $('dsFonts').innerHTML = fontsSectionHtml('ds', true);
+    $('dsLegend').innerHTML = legendSectionHtml('ds', false);
+    $('brAxes').innerHTML = axesSectionHtml('br', '<div class="field" style="margin-top:6px;"><label>X tick label angle</label><input type="number" id="barTickAngle" min="-90" max="0" step="5"></div>');
+    $('brFonts').innerHTML = fontsSectionHtml('br', true);
+    $('dsNum').innerHTML = numRowHtml('dsNumX','X axis ticks') + numRowHtml('dsNumY','Y axis ticks') + NUM_HINT;
+    $('brNum').innerHTML = numRowHtml('brNumY','Y axis ticks') + numRowHtml('brNumLabel','Value labels') + NUM_HINT;
+    $('brLegend').innerHTML = legendSectionHtml('br', true);
+  }
+  function mountStaticOptions(){
+    const presets = Object.keys(PRESETS).map(k=>'<option value="'+k+'">'+escapeHtml(PRESETS[k].label)+'</option>').join('') + '<option value="custom">Custom</option>';
+    const fonts = FONT_CHOICES.map(o=>'<option value="'+escapeHtml(o.v)+'">'+escapeHtml(o.n)+'</option>').join('');
+    $('dsPreset').innerHTML = presets;      $('brPreset').innerHTML = presets;
+    $('dsFontFamily').innerHTML = fonts;    $('brFontFamily').innerHTML = fonts;
+    $('dsPalette').innerHTML = Object.keys(PALETTES).map(k=>'<option value="'+k+'">'+escapeHtml(PALETTES[k].name)+'</option>').join('');
+    const numOpts = NUM_MODES.map(m=>'<option value="'+m[0]+'">'+escapeHtml(m[1])+'</option>').join('');
+    ['dsNumXMode','dsNumYMode','brNumYMode','brNumLabelMode','gsNumMode'].forEach(id=>{ $(id).innerHTML = numOpts; });
+    $('barFillStyle').innerHTML = Object.keys(BAR_FILLS).map(k=>'<option value="'+k+'">'+escapeHtml(BAR_FILLS[k].n)+'</option>').join('');
+    $('bandFill').innerHTML = Object.keys(BAND_FILLS).map(k=>'<option value="'+k+'">'+escapeHtml(BAND_FILLS[k].n)+'</option>').join('');
+  }
+  mountSections();
+  mountExportControls();
+  mountStaticOptions();
 
 })();
 </script>
