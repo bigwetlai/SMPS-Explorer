@@ -32,8 +32,7 @@ without installing anything.
 
 ## Use it
 
-**Option 1 – open the web page.** If GitHub Pages is enabled for this repository, the tool
-is at `https://bigwetlai.github.io/SMPS-Explorer/`. Drag your CSV exports onto the page.
+**Option 1 – open the web page.** The tool page is [here](https://bigwetlai.github.io/SMPS-Explorer/). Drag your CSV exports onto the page.
 
 **Option 2 – download.** Get `SMPS_CSV_Explorer.html` from the
 [Releases](../../releases) page and open it in Chrome, Edge or Firefox. It works offline.
