@@ -26,7 +26,7 @@ without installing anything.
   Auto-grouping, drag to reorder, checks that size bins and inversion settings match.
 - **Group statistics**: mean, SD, CV, SE, 95 % CI of any per-scan value, plus total, median,
   mean diameter, geometric mean, GSD and mode of each group's averaged distribution —
-  computed like the instrument software (see [docs/statistics.md](docs/statistics.md)).
+  computed like the instrument software (will be in [docs/statistics.md](docs/statistics.md)).
 - File order adjustable (drag the file tabs).
 
 ## Use it
