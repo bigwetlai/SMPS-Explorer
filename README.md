@@ -1,6 +1,7 @@
 # SMPS CSV Explorer
 
-**CREATED BY Claude!! Use with caution and expect error**
+**CREATED BY Claude!! Use with caution and expect error.**
+**The documentation is not finished. The author will finish them when in the mood.**
 
 Read, check and plot particle size distributions exported from **TSI AIM 9** and the
 **TSI SMPS** software (scanning mobility particle sizer / DMA + CPC) — in the browser,
