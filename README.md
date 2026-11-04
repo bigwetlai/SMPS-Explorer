@@ -32,7 +32,7 @@ without installing anything.
 ## Use it
 
 **Option 1 – open the web page.** If GitHub Pages is enabled for this repository, the tool
-is at `https://<user>.github.io/<repository>/`. Drag your CSV exports onto the page.
+is at `https://bigwetlai.github.io/SMPS-Explorer/`. Drag your CSV exports onto the page.
 
 **Option 2 – download.** Get `SMPS_CSV_Explorer.html` from the
 [Releases](../../releases) page and open it in Chrome, Edge or Firefox. It works offline.
@@ -51,7 +51,7 @@ Export the scans from AIM 9 or the TSI SMPS software as a comma-separated (CSV) 
 with concentrations as dN/dlogDp and number weighting. Several files can be loaded at once.
 Both decimal points and the default column layouts of each program are expected.
 
-## Documentation
+## Documentation (not uploaded)
 
 - [docs/statistics.md](docs/statistics.md) — every formula, how each value was checked
   against the instrument software, and how to read the results (GSD etc.).
